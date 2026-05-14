@@ -14,7 +14,7 @@ public class Device {
    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private DeviceType type;
-    private int number;
+    private int pin;
 
     @Enumerated(EnumType.STRING)
     private DeviceState state ;
@@ -25,9 +25,9 @@ public class Device {
     public Device() {
     }
 
-    public Device(DeviceType type, int number, Room room) {
+    public Device(DeviceType type, int pin, Room room) {
     this.type = type;
-    this.number = number;
+    this.pin = pin;
     this.room = room;
     this.state = (type == DeviceType.LIGHT) ? DeviceState.OFF : DeviceState.CLOSED;
 }
@@ -49,12 +49,12 @@ public class Device {
         this.type = type;
     }
 
-    public int getNumber() {
-        return number;
+    public int getpin() {
+        return pin;
     }
 
-    public void setNumber(int number) {
-        this.number = number;
+    public void setpin(int pin) {
+        this.pin = pin;
     }
 
     public DeviceState getState() {
