@@ -7,5 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.stage.smarthome.entity.Room;
 
 public interface RoomRepository extends JpaRepository<Room, Long> {
-    List<Room> findByUserId(Long userId);
+    List<Room> findByHouseId(Long houseId);
+
 }

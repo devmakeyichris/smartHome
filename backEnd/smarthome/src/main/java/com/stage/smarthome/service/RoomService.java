@@ -16,9 +16,9 @@ public class RoomService {
         this.roomRepository = roomRepository;
     }
 
-    // Récupérer toutes les pièces d’un utilisateur
-    public List<Room> getRoomsByUser(Long userId) {
-        return roomRepository.findByUserId(userId);
+    // Récupérer toutes les pièces d’une maison
+    public List<Room> getRoomsHome(Long userId) {
+        return roomRepository.findByHouseId(userId);
     }
 
     // Ajouter une nouvelle pièce
