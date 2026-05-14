@@ -16,10 +16,6 @@ public class User {
     private String password;
     private String email;
 
-
-    @OneToMany(mappedBy="user", cascade=CascadeType.ALL)
-    private List<Room> rooms;
-
     public User() {
     }
 
@@ -70,14 +66,6 @@ public class User {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
-    }
-
-    public List<Room> getRooms() {
-        return rooms;
-    }
-
-    public void setRooms(List<Room> rooms) {
-        this.rooms = rooms;
     }
 
     
