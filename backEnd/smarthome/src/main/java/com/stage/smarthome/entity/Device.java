@@ -11,9 +11,12 @@ import jakarta.persistence.ManyToOne;
 @Entity
 public class Device {
     @Id 
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Enumerated(EnumType.STRING)
     private DeviceType type;
+
     private int pin;
 
     @Enumerated(EnumType.STRING)
@@ -49,11 +52,11 @@ public class Device {
         this.type = type;
     }
 
-    public int getpin() {
+    public int getPin() {
         return pin;
     }
 
-    public void setpin(int pin) {
+    public void setPin(int pin) {
         this.pin = pin;
     }
 
