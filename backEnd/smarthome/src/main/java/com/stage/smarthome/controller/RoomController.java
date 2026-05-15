@@ -25,10 +25,10 @@ public class RoomController {
         this.roomService = roomService;
     }
 
-     // Récupérer toutes les pièces d’un utilisateur
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Room>> getRoomsByUser(@PathVariable Long userId) {
-        List<Room> rooms = roomService.getRoomsByUser(userId);
+     // Récupérer toutes les pièces d’un 
+    @GetMapping("/home/{homeId}")
+    public ResponseEntity<List<Room>> getRoomsByHome(@PathVariable Long homeId) {
+        List<Room> rooms = roomService.getRoomsHome(homeId);
         return rooms.isEmpty()
                 ? ResponseEntity.status(HttpStatus.NOT_FOUND).build()
                 : ResponseEntity.ok(rooms);

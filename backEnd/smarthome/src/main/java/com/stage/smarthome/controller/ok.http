@@ -1,0 +1,139 @@
+POST http://localhost:8080/devices
+Content-Type: application/json
+
+{
+  "name": "Light 3",
+  "type": "LIGHT",
+  "room": "Salon",
+  "pin": 9
+}
+
+################
+
+
+POST http://localhost:8080/rooms
+Content-Type: application/json
+
+{
+  "name": "Salon",
+  "devices": [
+    { "type": "LIGHT", "pin": 7 },
+    { "type": "DOOR", "pin": 8 }
+  ]
+}
+
+##################
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "firstName": "Chris",
+  "lastName": "Dupont",
+  "password": "password123"
+}
+
+#################
+POST http://localhost:8080/rooms
+Content-Type: application/json
+
+{
+  "name": "Salon",
+  "user": { "id": 1 },
+  "devices": [
+    { "type": "LIGHT", "pin": 7 },
+    { "type": "DOOR", "pin": 8 }
+  ]
+}
+
+
+####################
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+  "firstName": "Chris",
+  "lastName": "Dupont",
+  "email": "test@2example.com",
+  "password": "secret",
+  "rooms": [
+    {
+      "name": "Salon",
+      "devices": [
+        { "type": "LIGHT", "pin": 7 },
+        { "type": "DOOR", "pin": 8 }
+      ]
+    },
+    {
+      "name": "Cuisine",
+      "devices": [
+        { "type": "LIGHT", "pin": 9 },
+        { "type": "DOOR", "pin": 10 }
+      ]
+    }
+  ]
+}
+
+
+#########
+
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+
+  "firstName": "Chris",
+  "lastName": "Dupont",
+  "email": "test9@example.com",
+  "password": "secret",
+  "house": {
+    "houseName": "Maison Principale",
+    "rooms": [
+      {
+        "name": "Salon",
+        "devices": [
+          { "type": "LIGHT", "pin": 7 },
+          { "type": "DOOR", "pin": 8 }
+        ]
+      },
+      {
+        "name": "Cuisine",
+        "devices": [
+          { "type": "LIGHT", "pin": 9 },
+          { "type": "DOOR", "pin": 10 }
+        ]
+      }
+    ]
+  }
+}
+###################################
+
+
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+  "user": {
+    "firstName": "mali",
+    "lastName": "booba",
+    "email": "test19AkahhPassesPARDON!!@example.com",
+    "password": "1234"
+  },
+  "house": {
+    "houseName": "Maison Principale",
+    "rooms": [
+      {
+        "name": "Chambre",
+        "devices": [
+          { "type": "LIGHT", "pin": 7 },
+          { "type": "DOOR", "pin": 8 }
+        ]
+      }
+    ]
+  }
+}
+
+
+
+
+
