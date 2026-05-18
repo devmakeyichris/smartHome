@@ -134,6 +134,20 @@ Content-Type: application/json
 }
 
 
+### Allumer la LED
+POST http://localhost:8080/devices/light/on
+
+### Éteindre la LED
+POST http://localhost:8080/devices/light/off
+
+### Ouvrir la porte
+POST http://localhost:8080/devices/door/open
+
+### Fermer la porte
+POST http://localhost:8080/devices/door/close
+
+
+
 
 
 
