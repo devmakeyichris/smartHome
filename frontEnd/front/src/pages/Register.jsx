@@ -42,7 +42,8 @@ const Register = () => {
       id: i,
       nom: piecesDetails[i]?.nom || '',
       pinLumiere: piecesDetails[i]?.pinLumiere || '',
-      pinPorte: piecesDetails[i]?.pinPorte || ''
+      pinPorte: piecesDetails[i]?.pinPorte || '',
+      isMainDoor: piecesDetails[i]?.isMainDoor || false // Initialisation de la porte principale
     }));
     setPiecesDetails(newPieces);
   }, [userData.nbPieces]);
@@ -54,7 +55,16 @@ const Register = () => {
 
   const handlePieceChange = (index, field, value) => {
     const updatedPieces = [...piecesDetails];
-    updatedPieces[index][field] = value;
+    
+    // Si on coche une porte principale, on décoche automatiquement toutes les autres
+    if (field === 'isMainDoor' && value === true) {
+      updatedPieces.forEach((piece, i) => {
+        updatedPieces[i].isMainDoor = i === index;
+      });
+    } else {
+      updatedPieces[index][field] = value;
+    }
+    
     setPiecesDetails(updatedPieces);
   };
 
@@ -104,9 +114,10 @@ const Register = () => {
       if (!invitedHouseId) {
         const finalConfig = piecesDetails.map(piece => ({
           roomName: piece.nom,
+          isMainDoor: piece.isMainDoor, // Sauvegarde de la propriété de la porte principale
           devices: [
-            { type: 'light', pin: piece.pinLumiere, status: false },
-            { type: 'door', pin: piece.pinPorte, status: false }
+            { type: 'light', pin: parseInt(piece.pinLumiere), status: false },
+            { type: 'door', pin: parseInt(piece.pinPorte), status: false }
           ]
         }));
         localStorage.setItem('homeConfig', JSON.stringify(finalConfig));
@@ -118,7 +129,7 @@ const Register = () => {
         email: userData.email,
         nomMaison: userData.nomMaison,
         role: invitedHouseId ? 'guest' : 'admin',
-        houseId: userData.houseId
+        houseId: userData.houseId || "1"
       }));
       
       setTimeout(() => {
@@ -228,7 +239,8 @@ const Register = () => {
                     />
                     {errors.pieces?.[index]?.nom && <span className="error-text">{errors.pieces[index].nom}</span>}
                   </div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: '0.7rem' }}><Lightbulb size={12} /> PIN Lumière</label>
                       <input 
@@ -248,6 +260,21 @@ const Register = () => {
                       {errors.pieces?.[index]?.pinPorte && <span className="error-text">{errors.pieces[index].pinPorte}</span>}
                     </div>
                   </div>
+
+                  {/* CODE SÉCURISÉ AJOUTÉ : Case à cocher pour définir l'entrée principale RFID */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 0' }}>
+                    <input 
+                      type="checkbox" 
+                      id={`main-door-${index}`} 
+                      checked={piece.isMainDoor} 
+                      onChange={(e) => handlePieceChange(index, 'isMainDoor', e.target.checked)}
+                      style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                    />
+                    <label htmlFor={`main-door-${index}`} style={{ fontSize: '0.8rem', color: '#475569', cursor: 'pointer', fontWeight: '500' }}>
+                      🚪 Définir la porte de cette pièce comme porte principale (RFID)
+                    </label>
+                  </div>
+
                 </div>
               ))}
 
