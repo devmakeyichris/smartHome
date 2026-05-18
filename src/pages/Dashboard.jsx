@@ -10,7 +10,7 @@ const Dashboard = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [copied, setCopied] = useState(false);
 
-  // --- NOUVEAU : État pour l'historique ---
+  // --- État pour l'historique ---
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ const Dashboard = () => {
     if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
-  // --- NOUVEAU : Fonction pour ajouter un log dynamiquement ---
+  // --- Fonction pour ajouter un log dynamiquement ---
   const addLog = (action, deviceName, roomName) => {
     const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     const newEntry = { action, device: deviceName, room: roomName, time };
@@ -40,7 +40,7 @@ const Dashboard = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  // --- MODIFIÉ : toggleDevice devient dynamique ---
+  // --- toggleDevice dynamique ---
   const toggleDevice = (roomIndex, deviceType) => {
     const newRooms = [...rooms];
     const room = newRooms[roomIndex];
@@ -127,31 +127,53 @@ const Dashboard = () => {
                 <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', textTransform: 'capitalize', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Settings2 size={18} color="var(--primary)" /> {room.roomName}
                 </h2>
+                
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {room.devices.map((device) => (
-                    <div key={device.type} className={`device-row ${device.status ? 'on' : 'off'}`}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <div className="icon-box">
-                          {device.type === 'light' ? <Lightbulb size={22} /> : <DoorOpen size={22} />}
+                  {room.devices.map((device) => {
+                    // CONDITION DE DÉTECTION : Porte principale sur la broche du module RFID (ex: PIN 7)
+                    const isMainDoor = device.type === 'door' && device.pin === 7;
+
+                    return (
+                      <div key={device.type} className={`device-row ${device.status ? 'on' : 'off'}`}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                          <div className="icon-box">
+                            {device.type === 'light' ? <Lightbulb size={22} /> : <DoorOpen size={22} />}
+                          </div>
+                          <div>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <b style={{ margin: 0 }}>{device.type === 'light' ? 'Lumière' : 'Porte'}</b>
+                              
+                              {/* AJOUT : Si c'est la porte d'entrée RFID, on affiche le petit badge */}
+                              {isMainDoor && (
+                                <span style={{ 
+                                  background: '#e0e7ff', 
+                                  color: '#4f46e5', 
+                                  fontSize: '0.65rem', 
+                                  padding: '2px 6px', 
+                                  borderRadius: '6px', 
+                                  fontWeight: '700' 
+                                }}>
+                                  🔑 RFID
+                                </span>
+                              )}
+                            </span>
+                            <small>PIN {device.pin}</small>
+                          </div>
                         </div>
-                        <div>
-                          <b style={{ display: 'block' }}>{device.type === 'light' ? 'Lumière' : 'Porte'}</b>
-                          <small>PIN {device.pin}</small>
-                        </div>
+                        <button onClick={() => toggleDevice(realIdx, device.type)} className={`power-btn ${device.status ? 'active' : ''}`}>
+                          <Power size={16} /> 
+                          {device.status ? (device.type === 'light' ? 'Éteindre' : 'Fermer') : (device.type === 'light' ? 'Allumer' : 'Ouvrir')}
+                        </button>
                       </div>
-                      <button onClick={() => toggleDevice(realIdx, device.type)} className={`power-btn ${device.status ? 'active' : ''}`}>
-                        <Power size={16} /> 
-                        {device.status ? (device.type === 'light' ? 'Éteindre' : 'Fermer') : (device.type === 'light' ? 'Allumer' : 'Ouvrir')}
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* --- 4. COMPOSANT ACTIVITY LOG (Point 3) --- */}
+        {/* --- 4. COMPOSANT ACTIVITY LOG --- */}
         <ActivityLog logs={logs} />
 
       </div>
