@@ -101,7 +101,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     
-    // Si c'est une invitation, on valide le step 1 et on soumet direct
+    // Validations de sécurité
     if (invitedHouseId) {
       if (!validateStep1()) return;
     } else {
@@ -110,31 +110,68 @@ const Register = () => {
 
     setIsSubmitting(true);
     try {
-      // Si Admin : on crée la config. Si Invité : on récupère (ici on simule)
+      // 1. Préparation de la structure des pièces
+      let finalConfig = [];
       if (!invitedHouseId) {
-        const finalConfig = piecesDetails.map(piece => ({
+        finalConfig = piecesDetails.map(piece => ({
           roomName: piece.nom,
-          isMainDoor: piece.isMainDoor, // Sauvegarde de la propriété de la porte principale
+          isMainDoor: piece.isMainDoor,
           devices: [
             { type: 'light', pin: parseInt(piece.pinLumiere), status: false },
             { type: 'door', pin: parseInt(piece.pinPorte), status: false }
           ]
         }));
-        localStorage.setItem('homeConfig', JSON.stringify(finalConfig));
       }
 
-      localStorage.setItem('userProfile', JSON.stringify({
+      // 2. Formatage des données pour le serveur Spring Boot
+      const payload = {
         nom: userData.nom,
         prenom: userData.prenom,
         email: userData.email,
+        password: userData.password,
         nomMaison: userData.nomMaison,
         role: invitedHouseId ? 'guest' : 'admin',
-        houseId: userData.houseId || "1"
+        houseId: userData.houseId,
+        homeConfig: finalConfig
+      };
+
+      // 3. Envoi au serveur Backend (MySQL)
+      const response = await fetch('http://localhost:8080/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur serveur lors de l'enregistrement du compte");
+      }
+
+      const data = await response.json();
+
+      // 4. Initialisation locale uniquement pour le profil actif connecté
+      localStorage.setItem('userProfile', JSON.stringify({
+        nom: data.nom || userData.nom,
+        prenom: data.prenom || userData.prenom,
+        email: data.email || userData.email,
+        nomMaison: data.nomMaison || userData.nomMaison,
+        role: invitedHouseId ? 'guest' : 'admin',
+        houseId: data.houseId || userData.houseId || "1"
       }));
+
+      if (!invitedHouseId) {
+        localStorage.setItem('homeConfig', JSON.stringify(data.homeConfig || finalConfig));
+      }
       
+      // Redirection après succès
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 1500);
+
+    } catch (error) {
+      console.error("Erreur d'inscription:", error);
+      setErrors({ apiError: "Connexion impossible au serveur d'authentification." });
     } finally {
       setIsSubmitting(false);
     }
@@ -143,7 +180,6 @@ const Register = () => {
   return (
     <div className="register-container" style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
       <div className="register-card">
-        {/* Barre de progression cachée si invitation */}
         {!invitedHouseId && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '30px' }}>
             <div className={`step-dot ${step === 1 ? 'active' : ''}`} />
@@ -154,6 +190,8 @@ const Register = () => {
         <h2 style={{ textAlign: 'center', marginBottom: '10px' }}>
           {invitedHouseId ? "👋 Rejoindre la maison" : (step === 1 ? "🚀 Création du compte" : "🏠 Configuration des Pièces")}
         </h2>
+        
+        {errors.apiError && <p style={{ color: '#ef4444', textAlign: 'center', fontSize: '0.9rem' }}>{errors.apiError}</p>}
         
         {invitedHouseId && (
           <p style={{ textAlign: 'center', color: '#10b981', fontSize: '0.9rem', marginBottom: '20px' }}>
@@ -206,6 +244,7 @@ const Register = () => {
                 <div className="input-group" style={{ flex: 1 }}>
                   <label><Check size={16} /> Confirmer</label>
                   <input name="confirmPassword" type="password" value={userData.confirmPassword} onChange={handleUserChange} />
+                  {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
                 </div>
               </div>
 
@@ -227,7 +266,7 @@ const Register = () => {
               )}
             </div>
           ) : (
-            /* ÉTAPE 2 : CONFIGURATION DES PIÈCES (Seulement pour l'Admin) */
+            /* ÉTAPE 2 : CONFIGURATION DES PIÈCES */
             <div className="form-grid" style={{ display: 'grid', gap: '15px' }}>
               {piecesDetails.map((piece, index) => (
                 <div key={index} className="piece-setup-row" style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
@@ -261,7 +300,6 @@ const Register = () => {
                     </div>
                   </div>
 
-                  {/* CODE SÉCURISÉ AJOUTÉ : Case à cocher pour définir l'entrée principale RFID */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 0' }}>
                     <input 
                       type="checkbox" 
@@ -274,7 +312,6 @@ const Register = () => {
                       🚪 Définir la porte de cette pièce comme porte principale (RFID)
                     </label>
                   </div>
-
                 </div>
               ))}
 
