@@ -147,6 +147,18 @@ POST http://localhost:8080/devices/door/open
 POST http://localhost:8080/devices/door/close
 
 
+#########################
+
+POST http://localhost:8080/rfid/register
+Content-Type: application/json
+
+{
+  "uid": "D1482D2",
+  "owner": { "id": 10 }
+}
+
+
+
 
 
 
