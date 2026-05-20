@@ -16,13 +16,26 @@ public class DeviceController {
     
     private final DeviceRepository deviceRepository;
     private final DeviceService deviceService;
+    private final ArduinoService arduinoService;
     
     
-    private final ArduinoService arduinoService = new ArduinoService();
     
-    public DeviceController(DeviceService deviceService, DeviceRepository deviceRepository) {
+    public DeviceController(DeviceService deviceService, DeviceRepository deviceRepository, ArduinoService arduinoService) {
         this.deviceService = deviceService;
         this.deviceRepository = deviceRepository;
+        this.arduinoService = arduinoService;
+    }
+
+
+
+    @PostMapping("/light/{action}")
+    public void controlLight(@PathVariable String action) {
+        arduinoService.sendDeviceCommand("LIGHT", action.toUpperCase());
+    }
+
+    @PostMapping("/door/{action}")
+    public void controlDoor(@PathVariable String action) {
+        arduinoService.sendDeviceCommand("DOOR", action.toUpperCase());
     }
     
     @PutMapping("/{id}/state")
