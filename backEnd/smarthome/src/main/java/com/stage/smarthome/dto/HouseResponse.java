@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.stage.smarthome.entity.House;
-
+// verifiosn
 public class HouseResponse {
     private Long id;
     private String houseName;
