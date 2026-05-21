@@ -4,6 +4,9 @@ package com.stage.smarthome.dto;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
+// #########################
+
 import com.stage.smarthome.entity.House;
 // verifiosn
 public class HouseResponse {
