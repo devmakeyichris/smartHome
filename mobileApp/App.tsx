@@ -224,7 +224,7 @@ const App = () => {
     setBusy(true);
     setMessage('');
     try {
-      const data = await request('/api/auth/login', {
+      const data = await request('/auth/login', {
         body: JSON.stringify({email, password}),
         method: 'POST',
       });
@@ -255,7 +255,7 @@ const App = () => {
     setBusy(true);
     setMessage('');
     try {
-      const data = await request('/api/auth/register', {
+      const data = await request('/auth/register', {
         body: JSON.stringify({
           ...register,
           homeConfig: register.houseId ? [] : configuredRooms,

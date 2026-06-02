@@ -79,8 +79,8 @@ Le site web et l'application mobile doivent utiliser les memes routes :
 
 | Action | Methode et route |
 | --- | --- |
-| Connexion | `POST /api/auth/login` |
-| Inscription | `POST /api/auth/register` |
+| Connexion | `POST /auth/login` |
+| Inscription | `POST /auth/register` |
 | Ajouter une piece | `POST /rooms` |
 | Supprimer une piece | `DELETE /rooms/{id}` |
 | Ajouter un module | `POST /devices` |
@@ -135,7 +135,7 @@ une branche dediee avant de fusionner dans `main`.
 Le backend publie actuellement plusieurs routes pour les pieces, les modules et
 le RFID. L'equipe backend doit encore verifier :
 
-- la presence effective de `POST /api/auth/login` et `POST /api/auth/register` ;
+- la presence effective de `POST /auth/login` et `POST /auth/register` ;
 - la gestion dynamique des identifiants de modules ;
 - l'utilisation du `pin` Arduino pour les commandes physiques ;
 - les reponses JSON compactes apres l'ajout d'une piece ou d'un module.

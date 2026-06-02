@@ -49,8 +49,8 @@ http://192.168.x.x:8080
 
 | Action | Methode et route |
 | --- | --- |
-| Connexion | `POST /api/auth/login` |
-| Inscription | `POST /api/auth/register` |
+| Connexion | `POST /auth/login` |
+| Inscription | `POST /auth/register` |
 | Tester le backend | `GET /users/email/ping@smarthome.local` |
 | Ajouter une piece | `POST /rooms` |
 | Supprimer une piece | `DELETE /rooms/{id}` |
