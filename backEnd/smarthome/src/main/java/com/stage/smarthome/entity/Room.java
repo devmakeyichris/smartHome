@@ -1,5 +1,6 @@
 package com.stage.smarthome.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -27,7 +28,7 @@ public class Room {
     
     
     @OneToMany(mappedBy = "room", cascade=CascadeType.ALL)
-    private List<Device> devices;
+    private List<Device> devices = new ArrayList<>();
     
     public Long getId() {
         return id;
