@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /// ajout de la classe House pour ajouter une relation avec Room
 
@@ -23,9 +24,11 @@ public class House {
     
     
     
+    @JsonIgnore
     @OneToMany(mappedBy = "house", cascade = CascadeType.ALL)
     private List<OthersUserHouse> userRelations;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "house", cascade = CascadeType.ALL)
     private List<Room> rooms;
     
