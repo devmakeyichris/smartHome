@@ -64,4 +64,21 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
     }
+    
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody User loginRequest) {
+        
+        try {
+            User user = userService.login(
+            loginRequest.getEmail(),
+            loginRequest.getPassword());
+            
+            return ResponseEntity.ok(user);
+            
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(e.getMessage());
+        }
+    }
 }
+ 
