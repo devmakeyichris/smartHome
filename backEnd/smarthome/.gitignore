@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+# Ignorer le front
+/frontEnd/front/node_modules/
+/frontEnd/front/dist/
+/frontEnd/front/.next/
+/frontEnd/front/build/
+/frontEnd/front/.env
+/frontEnd/front/
