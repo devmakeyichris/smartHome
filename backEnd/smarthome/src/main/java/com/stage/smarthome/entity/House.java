@@ -1,6 +1,7 @@
 package com.stage.smarthome.entity;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -26,11 +27,11 @@ public class House {
     
     @JsonIgnore
     @OneToMany(mappedBy = "house", cascade = CascadeType.ALL)
-    private List<OthersUserHouse> userRelations;
+    private List<OthersUserHouse> userRelations = new ArrayList<>();
     
     @JsonIgnore
     @OneToMany(mappedBy = "house", cascade = CascadeType.ALL)
-    private List<Room> rooms;
+    private List<Room> rooms = new ArrayList<>();
     
     public Long getId() {
         return id;

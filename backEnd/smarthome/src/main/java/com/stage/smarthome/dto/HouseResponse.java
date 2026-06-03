@@ -14,14 +14,19 @@ public class HouseResponse {
     private String houseName;
     private List<RoomResponse> rooms;
 
-    public HouseResponse(House house) {
-        this.id = house.getId();
-        this.houseName = house.getHouseName();
+   public HouseResponse(House house) {
+    this.id = house.getId();
+    this.houseName = house.getHouseName();
+
+    if (house.getRooms() != null) {
         this.rooms = house.getRooms()
                           .stream()
                           .map(RoomResponse::new)
                           .collect(Collectors.toList());
+    } else {
+        this.rooms = List.of();
     }
+}
 
     public Long getId() {
         return id;
