@@ -29,7 +29,6 @@ public class House {
     @OneToMany(mappedBy = "house", cascade = CascadeType.ALL)
     private List<OthersUserHouse> userRelations = new ArrayList<>();
     
-    @JsonIgnore
     @OneToMany(mappedBy = "house", cascade = CascadeType.ALL)
     private List<Room> rooms = new ArrayList<>();
     
