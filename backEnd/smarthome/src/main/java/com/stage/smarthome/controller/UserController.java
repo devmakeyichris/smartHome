@@ -13,9 +13,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.stage.smarthome.dto.UserRegistrationWrapper;
 import com.stage.smarthome.dto.UserResponse;
+import com.stage.smarthome.entity.House;
 import com.stage.smarthome.entity.User;
 import com.stage.smarthome.runtime.EmailAlreadyUsedException;
 import com.stage.smarthome.service.UserService;
+
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/users")
@@ -66,19 +69,15 @@ public class UserController {
     }
     
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User loginRequest) {
+    public ResponseEntity<?> login(@RequestBody User loginRequest, HttpSession session) {
+        User user = userService.login(loginRequest.getEmail(), loginRequest.getPassword());
         
-        try {
-            User user = userService.login(
-            loginRequest.getEmail(),
-            loginRequest.getPassword());
-            
-            return ResponseEntity.ok(user);
-            
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(e.getMessage());
-        }
+        session.setAttribute("userId", user.getId());
+        session.setAttribute("email", user.getEmail());
+        
+        House house = user.getHouseRelations().get(0).getHouse();
+        UserResponse response = new UserResponse(user, house);
+        
+        return ResponseEntity.ok(response);
     }
 }
- 
