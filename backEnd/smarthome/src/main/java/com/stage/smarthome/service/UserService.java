@@ -85,33 +85,40 @@ public class UserService {
             throw new EmailAlreadyUsedException();
         });
         
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
         
-        if (house != null && house.getRooms() != null && !house.getRooms().isEmpty()) {
-            House savedHouse = houseRepository.save(house);
-            
+        if (house == null) {
+            throw new RuntimeException("Maison obligatoire");
+        }
+        
+        House savedHouse = houseRepository.save(house);
+        
+        if (house.getRooms() != null) {
             for (Room room : house.getRooms()) {
                 room.setHouse(savedHouse);
                 Room savedRoom = roomRepository.save(room);
                 
-                if (room.getDevices() != null && !room.getDevices().isEmpty()) {
+                if (room.getDevices() != null) {
                     for (Device device : room.getDevices()) {
                         device.setRoom(savedRoom);
                         deviceRepository.save(device);
                     }
                 }
             }
-            
-            OthersUserHouse userHouse = new OthersUserHouse();
-            userHouse.setUser(savedUser);
-            userHouse.setHouse(savedHouse);
-            userHouse.setRole(Role.OWNER);
-            userHouse.setStatus(RequestStatus.APPROVED);
-            othersUserHouseRepository.save(userHouse);
         }
+        
+        OthersUserHouse userHouse = new OthersUserHouse();
+        userHouse.setUser(savedUser);
+        userHouse.setHouse(savedHouse);
+        userHouse.setRole(Role.OWNER);
+        userHouse.setStatus(RequestStatus.APPROVED);
+        othersUserHouseRepository.save(userHouse);
         
         return savedUser;
     }
+
+
     
     // Chercher un utilisateur par email (utile pour login)
     public Optional<User> findByEmail(String email) {
