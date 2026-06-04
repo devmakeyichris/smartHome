@@ -66,4 +66,6 @@ public class RfidCardController {
         boolean access = rfidCardService.checkAccess(uid);
         return access ? "ACCESS_GRANTED" : "ACCESS_DENIED";
     }
+
+    
 }

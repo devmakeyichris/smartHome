@@ -44,7 +44,7 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
     
-    // Ajouter une pièce
+    // Ajouter une pièce !
     @PostMapping
     public ResponseEntity<Room> addRoom(@RequestBody Room room) {
         Room savedRoom = roomService.addRoom(room);

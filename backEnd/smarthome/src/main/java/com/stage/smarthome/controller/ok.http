@@ -158,26 +158,28 @@ Content-Type: application/json
 
 {
   "user": {
-    "firstName": "Chris",
-    "lastName": "Dupont",
-    "email": "test9@example.com",
+    "firstName": "Cordula",
+    "lastName": "tcheng",
+    "email": "essai3@gmail.com",
     "password": "secret"
   },
   "house": {
-    "houseName": "Maison Principale",
+    "houseName": "Maison3",
     "rooms": [
       {
-        "name": "Saloon",
+        "name": "Saloon3",
         "devices": [
           {
             "type": "LIGHT",
             "pin": 4,
-            "state": "OFF"
+            "state": "OFF",
+            "mainDoor": false
           },
           {
             "type": "DOOR",
             "pin": 5,
-            "state": "CLOSED"
+            "state": "CLOSED",
+            "mainDoor": true
           }
         ]
       }
@@ -185,7 +187,124 @@ Content-Type: application/json
   }
 }
 
+###########################
+POST http://localhost:8080/users/register
+Content-Type: application/json
 
+{
+  "user": {
+    "firstName": "Herman",
+    "lastName": "Test",
+    "email": "owner@gmail.com",
+    "password": "secret"
+  },
+  "house": {
+    "houseName": "Maison Test",
+    "rooms": [
+      {
+        "name": "Salon",
+        "devices": [
+          {
+            "type": "LIGHT",
+            "pin": 4,
+            "state": "OFF",
+            "mainDoor": false
+          },
+          {
+            "type": "DOOR",
+            "pin": 5,
+            "state": "CLOSED",
+            "mainDoor": true
+          }
+        ]
+      }
+    ]
+  }
+}
+
+#######################
+POST http://localhost:8080/users/login
+Content-Type: application/json
+
+{
+  "email": "owner@gmail.com",
+  "password": "secret"
+}
+
+#########################recuperation de la maison by mail
+GET http://localhost:8080/users/email/owner@gmail.com/house
+
+###################
+POST http://localhost:8080/rfid/register
+Content-Type: application/json
+
+{
+  "uid": "A1B2C6",
+  "name": "Carte lenie",
+  "house": {
+    "id": 1
+  }
+}
+
+##################
+GET http://localhost:8080/rfid/house/1
+
+####################
+GET http://localhost:8080/rfid/all
+
+######################
+PUT http://localhost:8080/rfid/5/block
+
+########################
+GET http://localhost:8080/rfid/check/A1B2C6
+
+##################
+PUT http://localhost:8080/rfid/5/unblock
+######################
+GET http://localhost:8080/rfid/check/A1B2C6
+####################
+GET http://localhost:8080/rooms/home/1
+################
+GET http://localhost:8080/devices/room/1
+
+########################
+POST http://localhost:8080/othersUserHouse/registerWithHouse
+Content-Type: application/json
+
+{
+  "user": {
+    "firstName": "Owner2",
+    "lastName": "Test",
+    "email": "owner2@gmail.com",
+    "password": "secret"
+  },
+  "house": {
+    "houseName": "Maison Invitation"
+  }
+}
+
+###################
+POST http://localhost:8080/othersUserHouse/requestJoinHouse/1
+Content-Type: application/json
+
+{
+  "firstName": "Invite",
+  "lastName": "Test",
+  "email": "invite@gmail.com",
+  "password": "secret"
+}
+##################
+POST http://localhost:8080/othersUserHouse/requestJoinHouse/2
+Content-Type: application/json
+
+{
+  "firstName": "Invite",
+  "lastName": "Test",
+  "email": "invite@gmail.com",
+  "password": "secret"
+}
+##############################
+POST http://localhost:8080/othersUserHouse/approveJoinRequest/4?approved=true
 
 
 

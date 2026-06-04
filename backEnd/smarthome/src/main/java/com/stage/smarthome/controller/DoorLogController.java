@@ -24,5 +24,6 @@ public class DoorLogController {
                             .map(DoorLogResponse::new)
                             .toList();
     }
+
 }
 

@@ -154,7 +154,7 @@ public class DeviceController {
     //     }
     // }
     
-    // Ajouter un device
+    // Ajouter un device !!!!!!!!!!
     @PostMapping
     public ResponseEntity<Device> addDevice(@RequestBody Device device) {
         Device savedDevice = deviceService.addDevice(device);
