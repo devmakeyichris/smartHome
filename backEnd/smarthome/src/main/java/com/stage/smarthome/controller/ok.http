@@ -114,16 +114,16 @@ Content-Type: application/json
 
 {
   "user": {
-    "firstName": "mali",
-    "lastName": "booba",
-    "email": "test19AkahhPassesPARDON!!@example.com",
+    "firstName": "alio",
+    "lastName": "mali",
+    "email": "testjuin@gmail.com",
     "password": "1234"
   },
   "house": {
     "houseName": "Maison Principale",
     "rooms": [
       {
-        "name": "Chambre",
+        "name": "Calotte",
         "devices": [
           { "type": "LIGHT", "pin": 7 },
           { "type": "DOOR", "pin": 8 }
