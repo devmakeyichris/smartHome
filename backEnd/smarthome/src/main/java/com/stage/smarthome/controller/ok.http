@@ -95,13 +95,6 @@ Content-Type: application/json
           { "type": "LIGHT", "pin": 7 },
           { "type": "DOOR", "pin": 8 }
         ]
-      },
-      {
-        "name": "Cuisine",
-        "devices": [
-          { "type": "LIGHT", "pin": 9 },
-          { "type": "DOOR", "pin": 10 }
-        ]
       }
     ]
   }
@@ -157,6 +150,40 @@ Content-Type: application/json
   "owner": { "id": 10 }
 }
 
+
+###########################new test############
+
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+  "user": {
+    "firstName": "Chris",
+    "lastName": "Dupont",
+    "email": "test9@example.com",
+    "password": "secret"
+  },
+  "house": {
+    "houseName": "Maison Principale",
+    "rooms": [
+      {
+        "name": "Saloon",
+        "devices": [
+          {
+            "type": "LIGHT",
+            "pin": 4,
+            "state": "OFF"
+          },
+          {
+            "type": "DOOR",
+            "pin": 5,
+            "state": "CLOSED"
+          }
+        ]
+      }
+    ]
+  }
+}
 
 
 

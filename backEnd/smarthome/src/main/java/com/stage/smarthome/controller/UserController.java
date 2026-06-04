@@ -34,13 +34,23 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRegistrationWrapper wrapper) {
         try {
-            User savedUser = userService.registerUserWithHouse(wrapper.getUser(), wrapper.getHouse());
-            UserResponse response = new UserResponse(savedUser, wrapper.getHouse());
+            User savedUser = userService.registerUserWithHouse(
+            wrapper.getUser(),
+            wrapper.getHouse()
+            );
+            
+            House savedHouse = userService.getHouseByEmail(savedUser.getEmail());
+            
+            UserResponse response = new UserResponse(savedUser, savedHouse);
+            
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            
         } catch (EmailAlreadyUsedException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body("Error: " + e.getMessage());
         }
     }
     
@@ -55,7 +65,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found"); // 404 avec message
         }
     }
-
+    
     
     
     @GetMapping("/email/{email}/house")
