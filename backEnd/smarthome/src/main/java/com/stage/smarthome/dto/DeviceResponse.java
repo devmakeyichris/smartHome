@@ -7,12 +7,14 @@ public class DeviceResponse {
     private String type;
     private int pin;
     private String state;
+    private boolean mainDoor;
 
     public DeviceResponse(Device device) {
         this.id = device.getId();
         this.type = device.getType().name();
         this.pin = device.getPin();
         this.state = device.getState().name();
+        this.mainDoor=device.isMainDoor();
     }
 
     public Long getId() {
@@ -45,6 +47,14 @@ public class DeviceResponse {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public boolean isMainDoor() {
+        return mainDoor;
+    }
+
+    public void setMainDoor(boolean mainDoor) {
+        this.mainDoor = mainDoor;
     }
 }
 

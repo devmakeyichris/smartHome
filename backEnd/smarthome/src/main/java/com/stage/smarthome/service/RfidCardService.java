@@ -5,51 +5,73 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.stage.smarthome.entity.House;
 import com.stage.smarthome.entity.RfidCard;
+import com.stage.smarthome.repository.HouseRepository;
 import com.stage.smarthome.repository.RfidCardRepository;
 
 @Service
 public class RfidCardService {
-
+    
     private final RfidCardRepository rfidCardRepository;
-
-    public RfidCardService(RfidCardRepository rfidCardRepository) {
+    private final HouseRepository houseRepository;
+    
+    public RfidCardService(RfidCardRepository rfidCardRepository,HouseRepository houseRepository) {
         this.rfidCardRepository = rfidCardRepository;
+        this.houseRepository = houseRepository;
     }
-
+    
     public RfidCard registerCard(RfidCard card) {
+        
+        if (rfidCardRepository.findByUid(card.getUid()).isPresent()) {
+            throw new RuntimeException("Cette carte RFID existe déjà");
+        }
+        
+        if (card.getHouse() == null || card.getHouse().getId() == null) {
+            throw new RuntimeException("Maison obligatoire pour enregistrer une carte RFID");
+        }
+        
+        House house = houseRepository.findById(card.getHouse().getId())
+        .orElseThrow(() -> new RuntimeException("Maison introuvable"));
+        
+        card.setHouse(house);
         card.setActive(true);
+        
         return rfidCardRepository.save(card);
     }
-
+    
+    public List<RfidCard> getCardsByHouse(Long houseId) {
+        return rfidCardRepository.findByHouseId(houseId);
+    }
+    
     public Optional<RfidCard> findByUid(String uid) {
         return rfidCardRepository.findByUid(uid);
     }
-
+    
     public List<RfidCard> getAllCards() {
         return rfidCardRepository.findAll();
     }
-
+    
     public RfidCard blockCard(Long cardId) {
         RfidCard card = rfidCardRepository.findById(cardId)
-                .orElseThrow(() -> new RuntimeException("Carte RFID introuvable"));
-
+        .orElseThrow(() -> new RuntimeException("Carte RFID introuvable"));
+        
         card.setActive(false);
         return rfidCardRepository.save(card);
     }
-
+    
     public RfidCard unblockCard(Long cardId) {
         RfidCard card = rfidCardRepository.findById(cardId)
-                .orElseThrow(() -> new RuntimeException("Carte RFID introuvable"));
-
+        .orElseThrow(() -> new RuntimeException("Carte RFID introuvable"));
+        
         card.setActive(true);
         return rfidCardRepository.save(card);
     }
-
+    
     public boolean checkAccess(String uid) {
         RfidCard card = rfidCardRepository.findByUid(uid)
-                .orElseThrow(() -> new RuntimeException("Carte inconnue"));
-
+        .orElseThrow(() -> new RuntimeException("Carte inconnue"));
+        
         return card.isActive();
     }
 }

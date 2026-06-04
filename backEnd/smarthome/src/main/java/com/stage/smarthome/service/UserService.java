@@ -85,17 +85,23 @@ public class UserService {
             throw new EmailAlreadyUsedException();
         });
         
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        User savedUser = userRepository.save(user);
-        
         if (house == null) {
             throw new RuntimeException("Maison obligatoire");
         }
+        
+        System.out.println("HOUSE = " + house.getHouseName());
+        System.out.println("ROOMS = " + house.getRooms());
+        
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User savedUser = userRepository.save(user);
         
         House savedHouse = houseRepository.save(house);
         
         if (house.getRooms() != null) {
             for (Room room : house.getRooms()) {
+                System.out.println("ROOM NAME = " + room.getName());
+                System.out.println("DEVICES = " + room.getDevices());
+                
                 room.setHouse(savedHouse);
                 Room savedRoom = roomRepository.save(room);
                 
@@ -117,8 +123,8 @@ public class UserService {
         
         return savedUser;
     }
-
-
+    
+    
     
     // Chercher un utilisateur par email (utile pour login)
     public Optional<User> findByEmail(String email) {
