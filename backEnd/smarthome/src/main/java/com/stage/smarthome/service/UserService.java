@@ -2,6 +2,7 @@ package com.stage.smarthome.service;
 
 import java.util.Optional;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +20,11 @@ import com.stage.smarthome.repository.RoomRepository;
 import com.stage.smarthome.repository.UserRepository;
 import com.stage.smarthome.runtime.EmailAlreadyUsedException;
 
+
 @Service
 public class UserService {
     
+    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final HouseRepository houseRepository;
     private final RoomRepository roomRepository;
@@ -29,26 +32,26 @@ public class UserService {
     private final OthersUserHouseRepository othersUserHouseRepository;
     
     
-    public UserService(UserRepository userRepository, DeviceRepository deviceRepository, 
+    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository, DeviceRepository deviceRepository, 
     HouseRepository houseRepository, RoomRepository roomRepository,
     OthersUserHouseRepository othersUserHouseRepository) {
+        this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.deviceRepository = deviceRepository;
         this.houseRepository = houseRepository;
         this.roomRepository = roomRepository;
         this.othersUserHouseRepository = othersUserHouseRepository;
     }
-
+    
     
     public User login(String email, String password) {
         
         User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new RuntimeException("Email incorrect"));
         
-        if (!user.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Mot de passe incorrect");
         }
-        
         return user;
     }
     
@@ -60,6 +63,7 @@ public class UserService {
         userRepository.findByEmail(user.getEmail()).ifPresent(u -> {
             throw new EmailAlreadyUsedException();
         });
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
     
