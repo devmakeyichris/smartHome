@@ -56,6 +56,18 @@ public class UserService {
     }
     
     
+    public House getHouseByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return othersUserHouseRepository.findByUser(user)
+        .stream()
+        .findFirst()
+        .map(rel -> rel.getHouse())
+        .orElseThrow(() -> new RuntimeException("House not found"));
+    }
+    
+    
     
     
     

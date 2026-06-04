@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stage.smarthome.dto.HouseResponse;
 import com.stage.smarthome.dto.UserRegistrationWrapper;
 import com.stage.smarthome.dto.UserResponse;
 import com.stage.smarthome.entity.House;
@@ -52,6 +53,27 @@ public class UserController {
             return ResponseEntity.ok(userOpt.get()); // 200 OK avec l'objet User
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found"); // 404 avec message
+        }
+    }
+
+    
+    
+    @GetMapping("/email/{email}/house")
+    public ResponseEntity<?> getHouseByEmail(@PathVariable String email) {
+        try {
+            House house = userService.getHouseByEmail(email);
+            
+            HouseResponse response = new HouseResponse(house);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(e.getMessage());
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body("Error: " + e.getMessage());
         }
     }
     
