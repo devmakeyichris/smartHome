@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { User, Mail, Lock, Home, ArrowLeft, ArrowRight, Check, Cpu, DoorOpen, Lightbulb, Link as LinkIcon } from 'lucide-react';
+import { User, Mail, Lock, Home, ArrowLeft, ArrowRight, Check, UserCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import '../App.css';
 
 const Register = () => {
@@ -8,7 +9,6 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Lecture du houseId dans l'URL (ex: ?houseId=1)
   const query = new URLSearchParams(useLocation().search);
   const invitedHouseId = query.get('houseId');
 
@@ -19,18 +19,17 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     nomMaison: '',
-    houseId: invitedHouseId || '', // Pré-rempli si lien d'invitation
+    houseId: invitedHouseId || '', 
     nbPieces: 1
   });
 
   const [piecesDetails, setPiecesDetails] = useState([]);
 
-  // Effet pour gérer l'invitation automatique
   useEffect(() => {
     if (invitedHouseId) {
       setUserData(prev => ({
         ...prev,
-        nomMaison: "Maison Partagée", // Nom temporaire, sera écrasé par la config réelle
+        nomMaison: "Maison Partagée", 
         houseId: invitedHouseId
       }));
     }
@@ -43,7 +42,7 @@ const Register = () => {
       nom: piecesDetails[i]?.nom || '',
       pinLumiere: piecesDetails[i]?.pinLumiere || '',
       pinPorte: piecesDetails[i]?.pinPorte || '',
-      isMainDoor: piecesDetails[i]?.isMainDoor || false // Initialisation de la porte principale
+      isMainDoor: piecesDetails[i]?.isMainDoor || false 
     }));
     setPiecesDetails(newPieces);
   }, [userData.nbPieces]);
@@ -55,8 +54,6 @@ const Register = () => {
 
   const handlePieceChange = (index, field, value) => {
     const updatedPieces = [...piecesDetails];
-    
-    // Si on coche une porte principale, on décoche automatiquement toutes les autres
     if (field === 'isMainDoor' && value === true) {
       updatedPieces.forEach((piece, i) => {
         updatedPieces[i].isMainDoor = i === index;
@@ -64,14 +61,13 @@ const Register = () => {
     } else {
       updatedPieces[index][field] = value;
     }
-    
     setPiecesDetails(updatedPieces);
   };
 
   const validateStep1 = () => {
     const newErrors = {};
-    if (userData.nom.length < 2) newErrors.nom = "Nom requis";
-    if (userData.prenom.length < 2) newErrors.prenom = "Prénom requis";
+    if (userData.prenom.length < 2) newErrors.prenom = "Prénom requis (min 2 caractères)";
+    if (userData.nom.length < 2) newErrors.nom = "Nom requis (min 2 caractères)";
     if (!userData.nomMaison.trim()) newErrors.nomMaison = "Nom de la maison requis";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) newErrors.email = "Email invalide";
     if (userData.password.length < 6) newErrors.password = "Mot de passe trop court (min 6)";
@@ -82,250 +78,377 @@ const Register = () => {
   };
 
   const validateStep2 = () => {
-    if (invitedHouseId) return true; // Pas de validation de pièces pour les invités
-    
+    if (invitedHouseId) return true; 
     const newErrors = {};
     const pieceErrors = piecesDetails.map(piece => {
       const err = {};
       if (!piece.nom.trim()) err.nom = "Nom requis";
-      if (!piece.pinLumiere) err.pinLumiere = "PIN Lumière requis";
-      if (!piece.pinPorte) err.pinPorte = "PIN Porte requis";
+      if (!piece.pinLumiere) err.pinLumiere = "PIN requis";
+      if (!piece.pinPorte) err.pinPorte = "PIN requis";
       return err;
     });
-
     const hasErrors = pieceErrors.some(e => Object.keys(e).length > 0);
-    if (hasErrors) setErrors({ pieces: pieceErrors });
-    return !hasErrors;
+    const hasMainDoor = piecesDetails.some(piece => piece.isMainDoor);
+    if (hasErrors || !hasMainDoor) {
+      setErrors({
+        pieces: pieceErrors,
+        mainDoor: !hasMainDoor ? "Sélectionnez la porte principale" : undefined
+      });
+      return false;
+    }
+    return true;
   };
 
-  const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
+  const ExecuterInscription = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
-    // Validations de sécurité
     if (invitedHouseId) {
       if (!validateStep1()) return;
     } else {
+      if (step === 1) {
+        if (validateStep1()) setStep(2);
+        return;
+      }
       if (!validateStep2()) return;
     }
 
     setIsSubmitting(true);
+    setErrors({});
+    
     try {
-      // 1. Préparation de la structure des pièces
       let finalConfig = [];
       if (!invitedHouseId) {
         finalConfig = piecesDetails.map(piece => ({
           roomName: piece.nom,
           isMainDoor: piece.isMainDoor,
           devices: [
-            { type: 'light', pin: parseInt(piece.pinLumiere), status: false },
-            { type: 'door', pin: parseInt(piece.pinPorte), status: false }
+            { type: 'LIGHT', pin: parseInt(piece.pinLumiere), state: 'OFF' },
+            { type: 'DOOR', pin: parseInt(piece.pinPorte), state: 'CLOSED' }
           ]
         }));
       }
 
-      // 2. Formatage des données pour le serveur Spring Boot
       const payload = {
-        nom: userData.nom,
-        prenom: userData.prenom,
-        email: userData.email,
-        password: userData.password,
-        nomMaison: userData.nomMaison,
-        role: invitedHouseId ? 'guest' : 'admin',
-        houseId: userData.houseId,
-        homeConfig: finalConfig
+        user: {
+          firstName: userData.prenom,
+          lastName: userData.nom,
+          email: userData.email,
+          password: userData.password
+        },
+        house: invitedHouseId ? null : {
+          houseName: userData.nomMaison,
+          rooms: finalConfig.map(room => ({
+            name: room.roomName,
+            devices: room.devices.map(device => ({
+              type: device.type,
+              pin: device.pin,
+              state: device.state
+            }))
+          }))
+        }
       };
 
-      // 3. Envoi au serveur Backend (MySQL)
-      const response = await fetch('http://localhost:8080/api/auth/register', {
+      const response = await fetch('http://localhost:8080/users/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error("Erreur serveur lors de l'enregistrement du compte");
+        const errorText = await response.text();
+        throw new Error(errorText || "Erreur serveur.");
       }
 
-      const data = await response.json();
+      const textData = await response.text();
+      const data = textData ? JSON.parse(textData) : {};
 
-      // 4. Initialisation locale uniquement pour le profil actif connecté
-      localStorage.setItem('userProfile', JSON.stringify({
-        nom: data.nom || userData.nom,
-        prenom: data.prenom || userData.prenom,
+      sessionStorage.setItem('userProfile', JSON.stringify({
+        nom: data.lastName || userData.nom,
+        prenom: data.firstName || userData.prenom,
         email: data.email || userData.email,
-        nomMaison: data.nomMaison || userData.nomMaison,
+        nomMaison: data.house?.houseName || userData.nomMaison,
         role: invitedHouseId ? 'guest' : 'admin',
-        houseId: data.houseId || userData.houseId || "1"
+        houseId: data.house?.id || userData.houseId || "1"
       }));
 
+      // Sauvegarder la config des pièces pour le dashboard
       if (!invitedHouseId) {
-        localStorage.setItem('homeConfig', JSON.stringify(data.homeConfig || finalConfig));
+        sessionStorage.setItem('homeConfig', JSON.stringify(finalConfig.map(room => ({
+          roomName: room.roomName,
+          devices: room.devices.map(d => ({
+            type: d.type,
+            pin: d.pin,
+            status: false
+          }))
+        }))));
       }
-      
-      // Redirection après succès
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 1500);
 
+      window.location.href = '/dashboard';
     } catch (error) {
-      console.error("Erreur d'inscription:", error);
-      setErrors({ apiError: "Connexion impossible au serveur d'authentification." });
+      console.error(error);
+      setErrors({ apiError: error.message || "Impossible de contacter le serveur." });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="register-container" style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
-      <div className="register-card">
-        {!invitedHouseId && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '30px' }}>
-            <div className={`step-dot ${step === 1 ? 'active' : ''}`} />
-            <div className={`step-dot ${step === 2 ? 'active' : ''}`} />
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+      <div className="register-container" style={{ maxWidth: '550px', width: '100%' }}>
+        <div className="register-card" style={{ boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#667eea', textDecoration: 'none', marginBottom: '20px', fontSize: '0.95rem', fontWeight: '500' }}>
+            <ArrowLeft size={16} /> Retour
+          </Link>
+
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <h1 style={{ fontSize: '2.2rem', margin: '0 0 10px 0', color: '#1f2937', fontWeight: '700' }}>
+              {invitedHouseId ? "👋 Rejoindre" : (step === 1 ? "🚀 Créer un compte" : "🏠 Configuration")}
+            </h1>
+            <p style={{ color: '#6b7280', margin: 0, fontSize: '0.95rem' }}>
+              {invitedHouseId ? "Rejoignez la maison connectée" : (step === 1 ? "Créez votre compte SmartHome" : "Configurez vos pièces")}
+            </p>
+            {!invitedHouseId && <p style={{ color: '#9ca3af', margin: '8px 0 0 0', fontSize: '0.85rem' }}>Étape {step} sur 2</p>}
           </div>
-        )}
 
-        <h2 style={{ textAlign: 'center', marginBottom: '10px' }}>
-          {invitedHouseId ? "👋 Rejoindre la maison" : (step === 1 ? "🚀 Création du compte" : "🏠 Configuration des Pièces")}
-        </h2>
-        
-        {errors.apiError && <p style={{ color: '#ef4444', textAlign: 'center', fontSize: '0.9rem' }}>{errors.apiError}</p>}
-        
-        {invitedHouseId && (
-          <p style={{ textAlign: 'center', color: '#10b981', fontSize: '0.9rem', marginBottom: '20px' }}>
-            <LinkIcon size={14} /> ID Maison détecté : <strong>{invitedHouseId}</strong>
-          </p>
-        )}
-
-        <form onSubmit={(e) => e.preventDefault()}>
-          {step === 1 ? (
-            <div className="form-grid" style={{ display: 'grid', gap: '20px' }}>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div className="input-group" style={{ flex: 1 }}>
-                  <label><User size={16} /> Prénom</label>
-                  <input name="prenom" value={userData.prenom} onChange={handleUserChange} placeholder="Marie" />
-                  {errors.prenom && <span className="error-text">{errors.prenom}</span>}
-                </div>
-                <div className="input-group" style={{ flex: 1 }}>
-                  <label>Nom</label>
-                  <input name="nom" value={userData.nom} onChange={handleUserChange} placeholder="Durand" />
-                  {errors.nom && <span className="error-text">{errors.nom}</span>}
-                </div>
-              </div>
-
-              <div className="input-group">
-                <label><Mail size={16} /> Email</label>
-                <input name="email" type="email" value={userData.email} onChange={handleUserChange} placeholder="marie@example.com" />
-                {errors.email && <span className="error-text">{errors.email}</span>}
-              </div>
-
-              <div className="input-group">
-                <label><Home size={16} /> Nom de la Maison</label>
-                <input 
-                  name="nomMaison" 
-                  value={userData.nomMaison} 
-                  onChange={handleUserChange} 
-                  readOnly={!!invitedHouseId}
-                  placeholder="Ex: Ma Villa Connectée" 
-                  style={{ background: invitedHouseId ? '#f1f5f9' : 'white' }}
-                />
-                {invitedHouseId && <small style={{ color: '#64748b' }}>Nom fixé par le propriétaire</small>}
-                {errors.nomMaison && <span className="error-text">{errors.nomMaison}</span>}
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div className="input-group" style={{ flex: 1 }}>
-                  <label><Lock size={16} /> Mot de passe</label>
-                  <input name="password" type="password" value={userData.password} onChange={handleUserChange} />
-                  {errors.password && <span className="error-text">{errors.password}</span>}
-                </div>
-                <div className="input-group" style={{ flex: 1 }}>
-                  <label><Check size={16} /> Confirmer</label>
-                  <input name="confirmPassword" type="password" value={userData.confirmPassword} onChange={handleUserChange} />
-                  {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
-                </div>
-              </div>
-
-              {!invitedHouseId && (
-                <div className="input-group">
-                  <label><Cpu size={16} /> Nombre de pièces à configurer</label>
-                  <input name="nbPieces" type="number" min="1" max="10" value={userData.nbPieces} onChange={handleUserChange} />
-                </div>
-              )}
-
-              {invitedHouseId ? (
-                <button type="button" className="cta-button" onClick={handleSubmit} disabled={isSubmitting}>
-                  {isSubmitting ? "Connexion..." : "Rejoindre maintenant"} <Check size={18} />
-                </button>
-              ) : (
-                <button type="button" className="cta-button" onClick={() => validateStep1() && setStep(2)}>
-                  Continuer vers les pièces <ArrowRight size={18} />
-                </button>
-              )}
-            </div>
-          ) : (
-            /* ÉTAPE 2 : CONFIGURATION DES PIÈCES */
-            <div className="form-grid" style={{ display: 'grid', gap: '15px' }}>
-              {piecesDetails.map((piece, index) => (
-                <div key={index} className="piece-setup-row" style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                  <div className="input-group" style={{ marginBottom: '10px' }}>
-                    <input 
-                      placeholder="Nom de la pièce (ex: Salon)" 
-                      value={piece.nom} 
-                      onChange={(e) => handlePieceChange(index, 'nom', e.target.value)}
-                    />
-                    {errors.pieces?.[index]?.nom && <span className="error-text">{errors.pieces[index].nom}</span>}
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.7rem' }}><Lightbulb size={12} /> PIN Lumière</label>
-                      <input 
-                        type="number" placeholder="PIN" 
-                        value={piece.pinLumiere} 
-                        onChange={(e) => handlePieceChange(index, 'pinLumiere', e.target.value)}
-                      />
-                      {errors.pieces?.[index]?.pinLumiere && <span className="error-text">{errors.pieces[index].pinLumiere}</span>}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.7rem' }}><DoorOpen size={12} /> PIN Porte</label>
-                      <input 
-                        type="number" placeholder="PIN" 
-                        value={piece.pinPorte} 
-                        onChange={(e) => handlePieceChange(index, 'pinPorte', e.target.value)}
-                      />
-                      {errors.pieces?.[index]?.pinPorte && <span className="error-text">{errors.pieces[index].pinPorte}</span>}
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 0' }}>
-                    <input 
-                      type="checkbox" 
-                      id={`main-door-${index}`} 
-                      checked={piece.isMainDoor} 
-                      onChange={(e) => handlePieceChange(index, 'isMainDoor', e.target.checked)}
-                      style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                    />
-                    <label htmlFor={`main-door-${index}`} style={{ fontSize: '0.8rem', color: '#475569', cursor: 'pointer', fontWeight: '500' }}>
-                      🚪 Définir la porte de cette pièce comme porte principale (RFID)
-                    </label>
-                  </div>
-                </div>
-              ))}
-
-              <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
-                <button type="button" className="refresh-btn" onClick={() => setStep(1)} style={{ flex: 1 }}>
-                  <ArrowLeft size={18} /> Retour
-                </button>
-                <button type="button" className="cta-button" onClick={handleSubmit} disabled={isSubmitting} style={{ flex: 2 }}>
-                  {isSubmitting ? "Sauvegarde..." : "Finaliser l'installation"}
-                </button>
-              </div>
+          {errors.apiError && (
+            <div style={{ 
+              color: '#dc2626', 
+              backgroundColor: '#fee2e2', 
+              border: '1px solid #fecaca', 
+              padding: '14px', 
+              borderRadius: '8px', 
+              textAlign: 'center', 
+              fontSize: '0.9rem',
+              marginBottom: '25px',
+              fontWeight: '500'
+            }}>
+              {errors.apiError}
             </div>
           )}
-        </form>
+
+          <form onSubmit={ExecuterInscription}>
+            {step === 1 ? (
+              <div style={{ display: 'grid', gap: '18px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1f2937' }}>Prénom</label>
+                    <input 
+                      name="prenom" 
+                      placeholder="Jean" 
+                      value={userData.prenom} 
+                      onChange={handleUserChange}
+                      style={{ padding: '11px 14px', border: errors.prenom ? '2px solid #dc2626' : '2px solid #e5e7eb', borderRadius: '8px', fontSize: '0.9rem', transition: 'all 0.3s ease', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                      onFocus={(e) => !errors.prenom && (e.target.style.borderColor = '#667eea')}
+                      onBlur={(e) => !errors.prenom && (e.target.style.borderColor = '#e5e7eb')}
+                    />
+                    {errors.prenom && <small style={{ color: '#dc2626', fontSize: '0.8rem' }}>{errors.prenom}</small>}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1f2937' }}>Nom</label>
+                    <input 
+                      name="nom" 
+                      placeholder="Dupont" 
+                      value={userData.nom} 
+                      onChange={handleUserChange}
+                      style={{ padding: '11px 14px', border: errors.nom ? '2px solid #dc2626' : '2px solid #e5e7eb', borderRadius: '8px', fontSize: '0.9rem', transition: 'all 0.3s ease', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                      onFocus={(e) => !errors.nom && (e.target.style.borderColor = '#667eea')}
+                      onBlur={(e) => !errors.nom && (e.target.style.borderColor = '#e5e7eb')}
+                    />
+                    {errors.nom && <small style={{ color: '#dc2626', fontSize: '0.8rem' }}>{errors.nom}</small>}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Mail size={16} /> Email
+                  </label>
+                  <input 
+                    name="email" 
+                    type="email" 
+                    placeholder="jean@example.com" 
+                    value={userData.email} 
+                    onChange={handleUserChange}
+                    style={{ padding: '11px 14px', border: errors.email ? '2px solid #dc2626' : '2px solid #e5e7eb', borderRadius: '8px', fontSize: '0.9rem', transition: 'all 0.3s ease', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                    onFocus={(e) => !errors.email && (e.target.style.borderColor = '#667eea')}
+                    onBlur={(e) => !errors.email && (e.target.style.borderColor = '#e5e7eb')}
+                  />
+                  {errors.email && <small style={{ color: '#dc2626', fontSize: '0.8rem' }}>{errors.email}</small>}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Home size={16} /> Nom de la maison
+                  </label>
+                  <input 
+                    name="nomMaison" 
+                    placeholder="Ma Villa" 
+                    value={userData.nomMaison} 
+                    onChange={handleUserChange}
+                    disabled={!!invitedHouseId}
+                    style={{ padding: '11px 14px', border: errors.nomMaison ? '2px solid #dc2626' : '2px solid #e5e7eb', borderRadius: '8px', fontSize: '0.9rem', transition: 'all 0.3s ease', boxSizing: 'border-box', fontFamily: 'inherit', background: invitedHouseId ? '#f3f4f6' : 'white' }}
+                    onFocus={(e) => !errors.nomMaison && !invitedHouseId && (e.target.style.borderColor = '#667eea')}
+                    onBlur={(e) => !errors.nomMaison && (e.target.style.borderColor = '#e5e7eb')}
+                  />
+                  {errors.nomMaison && <small style={{ color: '#dc2626', fontSize: '0.8rem' }}>{errors.nomMaison}</small>}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Lock size={16} /> Mot de passe
+                    </label>
+                    <input 
+                      name="password" 
+                      type="password" 
+                      placeholder="••••••••" 
+                      value={userData.password} 
+                      onChange={handleUserChange}
+                      style={{ padding: '11px 14px', border: errors.password ? '2px solid #dc2626' : '2px solid #e5e7eb', borderRadius: '8px', fontSize: '0.9rem', transition: 'all 0.3s ease', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                      onFocus={(e) => !errors.password && (e.target.style.borderColor = '#667eea')}
+                      onBlur={(e) => !errors.password && (e.target.style.borderColor = '#e5e7eb')}
+                    />
+                    {errors.password && <small style={{ color: '#dc2626', fontSize: '0.8rem' }}>{errors.password}</small>}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1f2937' }}>Confirmer</label>
+                    <input 
+                      name="confirmPassword" 
+                      type="password" 
+                      placeholder="••••••••" 
+                      value={userData.confirmPassword} 
+                      onChange={handleUserChange}
+                      style={{ padding: '11px 14px', border: errors.confirmPassword ? '2px solid #dc2626' : '2px solid #e5e7eb', borderRadius: '8px', fontSize: '0.9rem', transition: 'all 0.3s ease', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                      onFocus={(e) => !errors.confirmPassword && (e.target.style.borderColor = '#667eea')}
+                      onBlur={(e) => !errors.confirmPassword && (e.target.style.borderColor = '#e5e7eb')}
+                    />
+                    {errors.confirmPassword && <small style={{ color: '#dc2626', fontSize: '0.8rem' }}>{errors.confirmPassword}</small>}
+                  </div>
+                </div>
+
+                {!invitedHouseId && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1f2937' }}>Nombre de pièces</label>
+                    <input 
+                      name="nbPieces" 
+                      type="number" 
+                      min="1" 
+                      max="10"
+                      value={userData.nbPieces} 
+                      onChange={handleUserChange}
+                      style={{ padding: '11px 14px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '0.9rem', transition: 'all 0.3s ease', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                      onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                    />
+                  </div>
+                )}
+
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  style={{ padding: '14px 20px', background: isSubmitting ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.95rem', fontWeight: '600', cursor: isSubmitting ? 'not-allowed' : 'pointer', transition: 'all 0.3s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '10px', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)' }}
+                >
+                  {invitedHouseId ? (
+                    <><UserCheck size={18} /> {isSubmitting ? 'Inscription...' : 'Rejoindre'}</>
+                  ) : (
+                    <><ArrowRight size={18} /> {isSubmitting ? 'Vérification...' : 'Continuer vers les pièces'}</>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {piecesDetails.map((piece, index) => (
+                  <div key={index} style={{ background: '#f9fafb', padding: '16px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                    <h3 style={{ marginTop: 0, marginBottom: '12px', fontSize: '0.95rem', fontWeight: '600', color: '#1f2937' }}>Pièce {index + 1}</h3>
+                    
+                    <div style={{ display: 'grid', gap: '10px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: '600', color: '#374151' }}>Nom de la pièce</label>
+                        <input 
+                          placeholder="Salon" 
+                          value={piece.nom} 
+                          onChange={(e) => handlePieceChange(index, 'nom', e.target.value)}
+                          style={{ padding: '10px 12px', border: errors.pieces?.[index]?.nom ? '2px solid #dc2626' : '2px solid #e5e7eb', borderRadius: '6px', fontSize: '0.85rem', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                        />
+                        {errors.pieces?.[index]?.nom && <small style={{ color: '#dc2626' }}>{errors.pieces[index].nom}</small>}
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '0.85rem', fontWeight: '600', color: '#374151' }}>PIN Lumière</label>
+                          <input 
+                            type="number" 
+                            placeholder="2" 
+                            value={piece.pinLumiere} 
+                            onChange={(e) => handlePieceChange(index, 'pinLumiere', e.target.value)}
+                            style={{ padding: '10px 12px', border: errors.pieces?.[index]?.pinLumiere ? '2px solid #dc2626' : '2px solid #e5e7eb', borderRadius: '6px', fontSize: '0.85rem', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                          />
+                          {errors.pieces?.[index]?.pinLumiere && <small style={{ color: '#dc2626' }}>{errors.pieces[index].pinLumiere}</small>}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '0.85rem', fontWeight: '600', color: '#374151' }}>PIN Porte</label>
+                          <input 
+                            type="number" 
+                            placeholder="3" 
+                            value={piece.pinPorte} 
+                            onChange={(e) => handlePieceChange(index, 'pinPorte', e.target.value)}
+                            style={{ padding: '10px 12px', border: errors.pieces?.[index]?.pinPorte ? '2px solid #dc2626' : '2px solid #e5e7eb', borderRadius: '6px', fontSize: '0.85rem', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                          />
+                          {errors.pieces?.[index]?.pinPorte && <small style={{ color: '#dc2626' }}>{errors.pieces[index].pinPorte}</small>}
+                        </div>
+                      </div>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', color: '#374151', fontSize: '0.9rem', fontWeight: '600' }}>
+                        <input
+                          type="checkbox"
+                          checked={piece.isMainDoor}
+                          onChange={(e) => handlePieceChange(index, 'isMainDoor', e.target.checked)}
+                          style={{ width: '16px', height: '16px', accentColor: '#667eea' }}
+                        />
+                        Porte principale
+                      </label>
+                    </div>
+                  </div>
+                ))}
+
+                {errors.mainDoor && (
+                  <div style={{ color: '#dc2626', fontSize: '0.9rem', fontWeight: '500', marginTop: '6px' }}>
+                    {errors.mainDoor}
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '10px' }}>
+                  <button 
+                    type="button"
+                    onClick={() => setStep(1)}
+                    style={{ padding: '12px 16px', background: '#f3f4f6', color: '#374151', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  >
+                    <ArrowLeft size={16} /> Retour
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    style={{ padding: '12px 16px', background: isSubmitting ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', cursor: isSubmitting ? 'not-allowed' : 'pointer', transition: 'all 0.3s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)' }}
+                  >
+                    <Check size={16} /> {isSubmitting ? 'Inscription...' : 'Finaliser'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </form>
+
+          <div style={{ textAlign: 'center', marginTop: '25px', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>
+            <p style={{ color: '#6b7280', margin: 0, fontSize: '0.9rem' }}>
+              Déjà inscrit ?{' '}
+              <Link to="/login" style={{ color: '#667eea', textDecoration: 'none', fontWeight: '600' }}>
+                Se connecter
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
