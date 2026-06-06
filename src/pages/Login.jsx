@@ -35,7 +35,7 @@ const Login = () => {
       const data = await response.json();
 
       // Sauvegarde des données de l'utilisateur renvoyées par MySQL
-      localStorage.setItem('userProfile', JSON.stringify({
+      sessionStorage.setItem('userProfile', JSON.stringify({
         nom: data.nom,
         prenom: data.prenom,
         email: data.email,
@@ -46,7 +46,7 @@ const Login = () => {
 
       // Sauvegarde de la configuration des pièces si elle existe
       if (data.homeConfig) {
-        localStorage.setItem('homeConfig', JSON.stringify(data.homeConfig));
+        sessionStorage.setItem('homeConfig', JSON.stringify(data.homeConfig));
       }
 
       // Redirection instantanée vers le tableau de bord

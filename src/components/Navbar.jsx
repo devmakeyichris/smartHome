@@ -6,8 +6,8 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
 
-  // Lecture du profil connecté dans le localStorage
-  const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+  // Lecture du profil connecté dans la session courante
+  const userProfile = JSON.parse(sessionStorage.getItem('userProfile'));
 
   const isActive = (path) => location.pathname === path;
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -15,8 +15,8 @@ const Navbar = () => {
 
   // Fonction de déconnexion sécurisée (sans vider la base MySQL)
   const handleLogout = () => {
-    localStorage.removeItem('userProfile');
-    localStorage.removeItem('homeConfig');
+    sessionStorage.removeItem('userProfile');
+    sessionStorage.removeItem('homeConfig');
     closeMenu();
     window.location.href = '/login'; // Redirection vers la page de connexion
   };
