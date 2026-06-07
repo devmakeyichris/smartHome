@@ -1,0 +1,311 @@
+POST http://localhost:8080/devices
+Content-Type: application/json
+
+{
+  "name": "Light 3",
+  "type": "LIGHT",
+  "room": "Salon",
+  "pin": 9
+}
+
+################
+
+
+POST http://localhost:8080/rooms
+Content-Type: application/json
+
+{
+  "name": "Salon",
+  "devices": [
+    { "type": "LIGHT", "pin": 7 },
+    { "type": "DOOR", "pin": 8 }
+  ]
+}
+
+##################
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "firstName": "Chris",
+  "lastName": "Dupont",
+  "password": "password123"
+}
+
+#################
+POST http://localhost:8080/rooms
+Content-Type: application/json
+
+{
+  "name": "Salon",
+  "user": { "id": 1 },
+  "devices": [
+    { "type": "LIGHT", "pin": 7 },
+    { "type": "DOOR", "pin": 8 }
+  ]
+}
+
+
+####################
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+  "firstName": "Chris",
+  "lastName": "Dupont",
+  "email": "test@2example.com",
+  "password": "secret",
+  "rooms": [
+    {
+      "name": "Salon",
+      "devices": [
+        { "type": "LIGHT", "pin": 7 },
+        { "type": "DOOR", "pin": 8 }
+      ]
+    },
+    {
+      "name": "Cuisine",
+      "devices": [
+        { "type": "LIGHT", "pin": 9 },
+        { "type": "DOOR", "pin": 10 }
+      ]
+    }
+  ]
+}
+
+
+#########
+
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+
+  "firstName": "Chris",
+  "lastName": "Dupont",
+  "email": "test9@example.com",
+  "password": "secret",
+  "house": {
+    "houseName": "Maison Principale",
+    "rooms": [
+      {
+        "name": "Salon",
+        "devices": [
+          { "type": "LIGHT", "pin": 7 },
+          { "type": "DOOR", "pin": 8 }
+        ]
+      }
+    ]
+  }
+}
+###################################
+
+
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+  "user": {
+    "firstName": "alio",
+    "lastName": "mali",
+    "email": "testjuin@gmail.com",
+    "password": "1234"
+  },
+  "house": {
+    "houseName": "Maison Principale",
+    "rooms": [
+      {
+        "name": "Calotte",
+        "devices": [
+          { "type": "LIGHT", "pin": 7 },
+          { "type": "DOOR", "pin": 8 }
+        ]
+      }
+    ]
+  }
+}
+
+
+### Allumer la LED
+POST http://localhost:8080/devices/light/on
+
+### Éteindre la LED
+POST http://localhost:8080/devices/light/off
+
+### Ouvrir la porte
+POST http://localhost:8080/devices/door/open
+
+### Fermer la porte
+POST http://localhost:8080/devices/door/close
+
+
+#########################
+
+POST http://localhost:8080/rfid/register
+Content-Type: application/json
+
+{
+  "uid": "D1482D2",
+  "owner": { "id": 10 }
+}
+
+
+###########################new test############
+
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+  "user": {
+    "firstName": "Cordula",
+    "lastName": "tcheng",
+    "email": "essai3@gmail.com",
+    "password": "secret"
+  },
+  "house": {
+    "houseName": "Maison3",
+    "rooms": [
+      {
+        "name": "Saloon3",
+        "devices": [
+          {
+            "type": "LIGHT",
+            "pin": 4,
+            "state": "OFF",
+            "mainDoor": false
+          },
+          {
+            "type": "DOOR",
+            "pin": 5,
+            "state": "CLOSED",
+            "mainDoor": true
+          }
+        ]
+      }
+    ]
+  }
+}
+
+###########################
+POST http://localhost:8080/users/register
+Content-Type: application/json
+
+{
+  "user": {
+    "firstName": "Herman",
+    "lastName": "Test",
+    "email": "owner@gmail.com",
+    "password": "secret"
+  },
+  "house": {
+    "houseName": "Maison Test",
+    "rooms": [
+      {
+        "name": "Salon",
+        "devices": [
+          {
+            "type": "LIGHT",
+            "pin": 4,
+            "state": "OFF",
+            "mainDoor": false
+          },
+          {
+            "type": "DOOR",
+            "pin": 5,
+            "state": "CLOSED",
+            "mainDoor": true
+          }
+        ]
+      }
+    ]
+  }
+}
+
+#######################
+POST http://localhost:8080/users/login
+Content-Type: application/json
+
+{
+  "email": "owner@gmail.com",
+  "password": "secret"
+}
+
+#########################recuperation de la maison by mail
+GET http://localhost:8080/users/email/owner@gmail.com/house
+
+###################
+POST http://localhost:8080/rfid/register
+Content-Type: application/json
+
+{
+  "uid": "A1B2C6",
+  "name": "Carte lenie",
+  "house": {
+    "id": 1
+  }
+}
+
+##################
+GET http://localhost:8080/rfid/house/1
+
+####################
+GET http://localhost:8080/rfid/all
+
+######################
+PUT http://localhost:8080/rfid/5/block
+
+########################
+GET http://localhost:8080/rfid/check/A1B2C6
+
+##################
+PUT http://localhost:8080/rfid/5/unblock
+######################
+GET http://localhost:8080/rfid/check/A1B2C6
+####################
+GET http://localhost:8080/rooms/home/1
+################
+GET http://localhost:8080/devices/room/1
+
+########################
+POST http://localhost:8080/othersUserHouse/registerWithHouse
+Content-Type: application/json
+
+{
+  "user": {
+    "firstName": "Owner2",
+    "lastName": "Test",
+    "email": "owner2@gmail.com",
+    "password": "secret"
+  },
+  "house": {
+    "houseName": "Maison Invitation"
+  }
+}
+
+###################
+POST http://localhost:8080/othersUserHouse/requestJoinHouse/1
+Content-Type: application/json
+
+{
+  "firstName": "Invite",
+  "lastName": "Test",
+  "email": "invite@gmail.com",
+  "password": "secret"
+}
+##################
+POST http://localhost:8080/othersUserHouse/requestJoinHouse/2
+Content-Type: application/json
+
+{
+  "firstName": "Invite",
+  "lastName": "Test",
+  "email": "invite@gmail.com",
+  "password": "secret"
+}
+##############################
+POST http://localhost:8080/othersUserHouse/approveJoinRequest/4?approved=true
+
+
+
+
