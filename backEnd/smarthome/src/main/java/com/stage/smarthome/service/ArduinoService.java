@@ -21,8 +21,10 @@ public class ArduinoService {
     private final RfidCardRepository rfidCardRepository;
     private final DoorLogRepository doorLogRepository;
 
-    private static final String PORT_NAME = "COM4"; // change selon ton Arduino
+    private static final String PORT_NAME = "COM6";
     private static final int BAUD_RATE = 9600;
+
+    private static final int MAIN_DOOR_PIN = 6;
 
     public ArduinoService(RfidCardRepository rfidCardRepository,
                           DoorLogRepository doorLogRepository) {
@@ -79,7 +81,7 @@ public class ArduinoService {
         Optional<RfidCard> cardOpt = rfidCardRepository.findByUid(uid);
 
         if (cardOpt.isPresent() && cardOpt.get().isActive()) {
-            sendCommand("DOOR_OPEN");
+            sendDoorCommand(MAIN_DOOR_PIN, "OPEN");
 
             DoorLog log = new DoorLog();
             log.setAction("OPEN");
@@ -90,7 +92,7 @@ public class ArduinoService {
 
             System.out.println("RFID valide : porte principale ouverte");
         } else {
-            sendCommand("DOOR_DENIED");
+            sendCommand("DOOR:" + MAIN_DOOR_PIN + ":CLOSED");
             System.out.println("RFID refusé : carte inconnue ou bloquée");
         }
     }
@@ -108,22 +110,30 @@ public class ArduinoService {
         byte[] data = fullCommand.getBytes();
 
         port.writeBytes(data, data.length);
-        System.out.println("Commande envoyée : " + fullCommand);
+        System.out.println("Commande envoyée à l'Arduino : " + fullCommand);
     }
 
-    public void lightOn() {
-        sendCommand("LIGHT_ON");
+    public void sendLightCommand(int pin, String action) {
+        sendCommand("LIGHT:" + pin + ":" + action.toUpperCase());
     }
 
-    public void lightOff() {
-        sendCommand("LIGHT_OFF");
+    public void sendDoorCommand(int pin, String action) {
+        sendCommand("DOOR:" + pin + ":" + action.toUpperCase());
     }
 
-    public void doorOpen() {
-        sendCommand("DOOR_OPEN");
+    public void lightOn(int pin) {
+        sendLightCommand(pin, "ON");
     }
 
-    public void doorClose() {
-        sendCommand("DOOR_CLOSE");
+    public void lightOff(int pin) {
+        sendLightCommand(pin, "OFF");
+    }
+
+    public void doorOpen(int pin) {
+        sendDoorCommand(pin, "OPEN");
+    }
+
+    public void doorClose(int pin) {
+        sendDoorCommand(pin, "CLOSED");
     }
 }

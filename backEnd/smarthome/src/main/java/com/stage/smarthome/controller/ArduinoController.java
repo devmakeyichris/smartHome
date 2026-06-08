@@ -17,43 +17,39 @@ public class ArduinoController {
         this.arduinoService = arduinoService;
     }
 
-    @PostMapping("/light/on")
-    public ResponseEntity<?> lightOn() {
-        try {
-            arduinoService.lightOn();
-            return ResponseEntity.ok(Map.of("message", "Lumière allumée"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    @PostMapping("/light/{pin}/{action}")
+    public ResponseEntity<?> controlLight(
+            @PathVariable int pin,
+            @PathVariable String action
+    ) {
+        if (action.equalsIgnoreCase("on")) {
+            arduinoService.lightOn(pin);
+            return ResponseEntity.ok(Map.of("message", "Lumière allumée", "pin", pin));
         }
+
+        if (action.equalsIgnoreCase("off")) {
+            arduinoService.lightOff(pin);
+            return ResponseEntity.ok(Map.of("message", "Lumière éteinte", "pin", pin));
+        }
+
+        return ResponseEntity.badRequest().body(Map.of("error", "Action lumière invalide"));
     }
 
-    @PostMapping("/light/off")
-    public ResponseEntity<?> lightOff() {
-        try {
-            arduinoService.lightOff();
-            return ResponseEntity.ok(Map.of("message", "Lumière éteinte"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    @PostMapping("/door/{pin}/{action}")
+    public ResponseEntity<?> controlDoor(
+            @PathVariable int pin,
+            @PathVariable String action
+    ) {
+        if (action.equalsIgnoreCase("open")) {
+            arduinoService.doorOpen(pin);
+            return ResponseEntity.ok(Map.of("message", "Porte ouverte", "pin", pin));
         }
-    }
 
-    @PostMapping("/door/open")
-    public ResponseEntity<?> doorOpen() {
-        try {
-            arduinoService.doorOpen();
-            return ResponseEntity.ok(Map.of("message", "Porte ouverte"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        if (action.equalsIgnoreCase("close") || action.equalsIgnoreCase("closed")) {
+            arduinoService.doorClose(pin);
+            return ResponseEntity.ok(Map.of("message", "Porte fermée", "pin", pin));
         }
-    }
 
-    @PostMapping("/door/close")
-    public ResponseEntity<?> doorClose() {
-        try {
-            arduinoService.doorClose();
-            return ResponseEntity.ok(Map.of("message", "Porte fermée"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+        return ResponseEntity.badRequest().body(Map.of("error", "Action porte invalide"));
     }
 }
