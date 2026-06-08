@@ -424,9 +424,9 @@ const Dashboard = () => {
       let url = "";
       
       if (device.type === "LIGHT") {
-        url = `http://localhost:8080/arduino/light/${device.pin}/${nextStatus ? "on" : "off"}`;
+        url = `http://localhost:8080/arduino/light/${nextStatus ? "on" : "off"}`;
       } else if (device.type === "DOOR") {
-        url = `http://localhost:8080/arduino/door/${device.pin}/${nextStatus ? "open" : "close"}`;
+        url = `http://localhost:8080/arduino/door/${nextStatus ? "open" : "close"}`;
       }
       
       const response = await fetch(url, {
