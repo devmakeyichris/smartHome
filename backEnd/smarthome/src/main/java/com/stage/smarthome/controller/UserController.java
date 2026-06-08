@@ -11,11 +11,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stage.smarthome.dto.HouseResponse;
 import com.stage.smarthome.dto.UserRegistrationWrapper;
 import com.stage.smarthome.dto.UserResponse;
+import com.stage.smarthome.entity.House;
 import com.stage.smarthome.entity.User;
 import com.stage.smarthome.runtime.EmailAlreadyUsedException;
 import com.stage.smarthome.service.UserService;
+
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/users")
@@ -30,13 +34,23 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRegistrationWrapper wrapper) {
         try {
-            User savedUser = userService.registerUserWithHouse(wrapper.getUser(), wrapper.getHouse());
-            UserResponse response = new UserResponse(savedUser, wrapper.getHouse());
+            User savedUser = userService.registerUserWithHouse(
+            wrapper.getUser(),
+            wrapper.getHouse()
+            );
+            
+            House savedHouse = userService.getHouseByEmail(savedUser.getEmail());
+            
+            UserResponse response = new UserResponse(savedUser, savedHouse);
+            
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            
         } catch (EmailAlreadyUsedException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body("Error: " + e.getMessage());
         }
     }
     
@@ -49,6 +63,27 @@ public class UserController {
             return ResponseEntity.ok(userOpt.get()); // 200 OK avec l'objet User
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found"); // 404 avec message
+        }
+    }
+    
+    
+    
+    @GetMapping("/email/{email}/house")
+    public ResponseEntity<?> getHouseByEmail(@PathVariable String email) {
+        try {
+            House house = userService.getHouseByEmail(email);
+            
+            HouseResponse response = new HouseResponse(house);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(e.getMessage());
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body("Error: " + e.getMessage());
         }
     }
     
@@ -66,19 +101,15 @@ public class UserController {
     }
     
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User loginRequest) {
+    public ResponseEntity<?> login(@RequestBody User loginRequest, HttpSession session) {
+        User user = userService.login(loginRequest.getEmail(), loginRequest.getPassword());
         
-        try {
-            User user = userService.login(
-            loginRequest.getEmail(),
-            loginRequest.getPassword());
-            
-            return ResponseEntity.ok(user);
-            
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(e.getMessage());
-        }
+        session.setAttribute("userId", user.getId());
+        session.setAttribute("email", user.getEmail());
+        
+        House house = user.getHouseRelations().get(0).getHouse();
+        UserResponse response = new UserResponse(user, house);
+        
+        return ResponseEntity.ok(response);
     }
 }
- 

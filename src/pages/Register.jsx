@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { User, Mail, Lock, Home, ArrowLeft, ArrowRight, Check, Cpu, DoorOpen, Lightbulb, Link as LinkIcon } from 'lucide-react';
@@ -150,8 +151,8 @@ const Register = () => {
 
       const data = await response.json();
 
-      // 4. Initialisation locale uniquement pour le profil actif connecté
-      localStorage.setItem('userProfile', JSON.stringify({
+      // 4. Initialisation de session uniquement pour le profil actif connecté
+      sessionStorage.setItem('userProfile', JSON.stringify({
         nom: data.nom || userData.nom,
         prenom: data.prenom || userData.prenom,
         email: data.email || userData.email,
@@ -161,7 +162,7 @@ const Register = () => {
       }));
 
       if (!invitedHouseId) {
-        localStorage.setItem('homeConfig', JSON.stringify(data.homeConfig || finalConfig));
+        sessionStorage.setItem('homeConfig', JSON.stringify(data.homeConfig || finalConfig));
       }
       
       // Redirection après succès

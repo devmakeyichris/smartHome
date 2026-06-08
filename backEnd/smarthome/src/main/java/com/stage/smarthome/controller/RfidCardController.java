@@ -2,49 +2,68 @@ package com.stage.smarthome.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.stage.smarthome.dto.RfidCardResponse;
 import com.stage.smarthome.entity.RfidCard;
 import com.stage.smarthome.service.RfidCardService;
 
 @RestController
 @RequestMapping("/rfid")
 public class RfidCardController {
-
+    
     private final RfidCardService rfidCardService;
-
+    
     public RfidCardController(RfidCardService rfidCardService) {
         this.rfidCardService = rfidCardService;
     }
-
+    
     @PostMapping("/register")
-    public RfidCard registerCard(@RequestBody RfidCard card) {
-        return rfidCardService.registerCard(card);
+    public ResponseEntity<?> registerCard(@RequestBody RfidCard card) {
+        try {
+            RfidCard savedCard = rfidCardService.registerCard(card);
+            return ResponseEntity.status(HttpStatus.CREATED)
+            .body(new RfidCardResponse(savedCard));
+            
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(e.getMessage());
+        }
     }
-
+    
     @GetMapping("/all")
-    public List<RfidCard> getAllCards() {
-        return rfidCardService.getAllCards();
+    public List<RfidCardResponse> getAllCards() {
+        return rfidCardService.getAllCards()
+        .stream()
+        .map(RfidCardResponse::new)
+        .toList();
     }
-
+    
     @PutMapping("/{id}/block")
-    public RfidCard blockCard(@PathVariable Long id) {
-        return rfidCardService.blockCard(id);
+    public RfidCardResponse blockCard(@PathVariable Long id) {
+        RfidCard card = rfidCardService.blockCard(id);
+        return new RfidCardResponse(card);
     }
-
+    
+    @GetMapping("/house/{houseId}")
+    public List<RfidCardResponse> getCardsByHouse(@PathVariable Long houseId) {
+        return rfidCardService.getCardsByHouse(houseId)
+        .stream()
+        .map(RfidCardResponse::new)
+        .toList();
+    }
+    
     @PutMapping("/{id}/unblock")
-    public RfidCard unblockCard(@PathVariable Long id) {
-        return rfidCardService.unblockCard(id);
+    public RfidCardResponse unblockCard(@PathVariable Long id) {
+        RfidCard card = rfidCardService.unblockCard(id);
+        return new RfidCardResponse(card);
     }
-
+    
     @GetMapping("/check/{uid}")
     public String checkAccess(@PathVariable String uid) {
         boolean access = rfidCardService.checkAccess(uid);
-
-        if (access) {
-            return "ACCESS_GRANTED";
-        } else {
-            return "ACCESS_DENIED";
-        }
+        return access ? "ACCESS_GRANTED" : "ACCESS_DENIED";
     }
 }

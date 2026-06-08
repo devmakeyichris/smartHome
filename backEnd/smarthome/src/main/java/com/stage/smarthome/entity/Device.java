@@ -14,6 +14,8 @@ public class Device {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private boolean mainDoor;
+
     @Enumerated(EnumType.STRING)
     private DeviceType type;
 
@@ -74,5 +76,13 @@ public class Device {
 
     public void setRoom(Room room) {
         this.room = room;
+    }
+
+    public boolean isMainDoor() {
+        return mainDoor;
+    }
+
+    public void setMainDoor(boolean mainDoor) {
+        this.mainDoor = mainDoor;
     }
 }

@@ -14,8 +14,8 @@ const Dashboard = () => {
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    const savedConfig = localStorage.getItem('homeConfig');
-    const savedUser = localStorage.getItem('userProfile');
+    const savedConfig = sessionStorage.getItem('homeConfig');
+    const savedUser = sessionStorage.getItem('userProfile');
     if (savedConfig) setRooms(JSON.parse(savedConfig));
     if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
@@ -49,7 +49,7 @@ const Dashboard = () => {
     if (device) {
       device.status = !device.status;
       setRooms(newRooms);
-      localStorage.setItem('homeConfig', JSON.stringify(newRooms));
+      sessionStorage.setItem('homeConfig', JSON.stringify(newRooms));
 
       // 1. Définir le nom de l'action pour le log
       const actionName = device.status 

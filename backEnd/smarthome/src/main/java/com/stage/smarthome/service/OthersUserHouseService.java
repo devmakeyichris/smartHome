@@ -1,6 +1,6 @@
 package com.stage.smarthome.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.stage.smarthome.entity.House;
@@ -14,39 +14,53 @@ import com.stage.smarthome.repository.UserRepository;
 
 @Service
 public class OthersUserHouseService {
-    @Autowired
-    private OthersUserHouseRepository othersUserHouseRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final OthersUserHouseRepository othersUserHouseRepository;
+    private final UserRepository userRepository;
+    private final HouseRepository houseRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private HouseRepository houseRepository;
+    public OthersUserHouseService(
+            OthersUserHouseRepository othersUserHouseRepository,
+            UserRepository userRepository,
+            HouseRepository houseRepository,
+            PasswordEncoder passwordEncoder
+    ) {
+        this.othersUserHouseRepository = othersUserHouseRepository;
+        this.userRepository = userRepository;
+        this.houseRepository = houseRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
-    // Premier utilisateur qui crée la maison
     public OthersUserHouse registerWithHouse(User user, House house) {
-        houseRepository.save(house);
 
-        userRepository.save(user);
+        House savedHouse = houseRepository.save(house);
+
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User savedUser = userRepository.save(user);
 
         OthersUserHouse othersUserHouse = new OthersUserHouse();
-        othersUserHouse.setUser(user);
-        othersUserHouse.setHouse(house);
+        othersUserHouse.setUser(savedUser);
+        othersUserHouse.setHouse(savedHouse);
         othersUserHouse.setRole(Role.OWNER);
         othersUserHouse.setStatus(RequestStatus.APPROVED);
 
         return othersUserHouseRepository.save(othersUserHouse);
     }
 
-      // Autres utilisateurs qui demandent à rejoindre une maison
+
+    
+
     public OthersUserHouse requestJoinHouse(User user, Long houseId) {
+
         House house = houseRepository.findById(houseId)
                 .orElseThrow(() -> new RuntimeException("Maison introuvable"));
 
-        userRepository.save(user);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User savedUser = userRepository.save(user);
 
         OthersUserHouse othersUserHouse = new OthersUserHouse();
-        othersUserHouse.setUser(user);
+        othersUserHouse.setUser(savedUser);
         othersUserHouse.setHouse(house);
         othersUserHouse.setRole(Role.MEMBER);
         othersUserHouse.setStatus(RequestStatus.PENDING);
@@ -55,12 +69,11 @@ public class OthersUserHouseService {
     }
 
     public String generateInvitationLink(House house) {
-    return "https://app.com/join?houseId=" + house.getId();
-}
+        return "http://localhost:5173/register?houseId=" + house.getId();
+    }
 
 
-    
-    // Validation par le propriétaire
+
     public OthersUserHouse approveJoinRequest(Long othersUserHouseId, boolean approved) {
 
         OthersUserHouse othersUserHouse = othersUserHouseRepository.findById(othersUserHouseId)
@@ -74,6 +87,4 @@ public class OthersUserHouseService {
 
         return othersUserHouseRepository.save(othersUserHouse);
     }
-
-    
 }

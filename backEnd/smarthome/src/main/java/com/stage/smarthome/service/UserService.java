@@ -2,6 +2,7 @@ package com.stage.smarthome.service;
 
 import java.util.Optional;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +20,11 @@ import com.stage.smarthome.repository.RoomRepository;
 import com.stage.smarthome.repository.UserRepository;
 import com.stage.smarthome.runtime.EmailAlreadyUsedException;
 
+
 @Service
 public class UserService {
     
+    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final HouseRepository houseRepository;
     private final RoomRepository roomRepository;
@@ -29,27 +32,39 @@ public class UserService {
     private final OthersUserHouseRepository othersUserHouseRepository;
     
     
-    public UserService(UserRepository userRepository, DeviceRepository deviceRepository, 
+    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository, DeviceRepository deviceRepository, 
     HouseRepository houseRepository, RoomRepository roomRepository,
     OthersUserHouseRepository othersUserHouseRepository) {
+        this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.deviceRepository = deviceRepository;
         this.houseRepository = houseRepository;
         this.roomRepository = roomRepository;
         this.othersUserHouseRepository = othersUserHouseRepository;
     }
-
+    
     
     public User login(String email, String password) {
         
         User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new RuntimeException("Email incorrect"));
         
-        if (!user.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Mot de passe incorrect");
         }
-        
         return user;
+    }
+    
+    
+    public House getHouseByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return othersUserHouseRepository.findByUser(user)
+        .stream()
+        .findFirst()
+        .map(rel -> rel.getHouse())
+        .orElseThrow(() -> new RuntimeException("House not found"));
     }
     
     
@@ -60,6 +75,7 @@ public class UserService {
         userRepository.findByEmail(user.getEmail()).ifPresent(u -> {
             throw new EmailAlreadyUsedException();
         });
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
     
@@ -69,33 +85,46 @@ public class UserService {
             throw new EmailAlreadyUsedException();
         });
         
+        if (house == null) {
+            throw new RuntimeException("Maison obligatoire");
+        }
+        
+        System.out.println("HOUSE = " + house.getHouseName());
+        System.out.println("ROOMS = " + house.getRooms());
+        
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
         
-        if (house != null && house.getRooms() != null && !house.getRooms().isEmpty()) {
-            House savedHouse = houseRepository.save(house);
-            
+        House savedHouse = houseRepository.save(house);
+        
+        if (house.getRooms() != null) {
             for (Room room : house.getRooms()) {
+                System.out.println("ROOM NAME = " + room.getName());
+                System.out.println("DEVICES = " + room.getDevices());
+                
                 room.setHouse(savedHouse);
                 Room savedRoom = roomRepository.save(room);
                 
-                if (room.getDevices() != null && !room.getDevices().isEmpty()) {
+                if (room.getDevices() != null) {
                     for (Device device : room.getDevices()) {
                         device.setRoom(savedRoom);
                         deviceRepository.save(device);
                     }
                 }
             }
-            
-            OthersUserHouse userHouse = new OthersUserHouse();
-            userHouse.setUser(savedUser);
-            userHouse.setHouse(savedHouse);
-            userHouse.setRole(Role.OWNER);
-            userHouse.setStatus(RequestStatus.APPROVED);
-            othersUserHouseRepository.save(userHouse);
         }
+        
+        OthersUserHouse userHouse = new OthersUserHouse();
+        userHouse.setUser(savedUser);
+        userHouse.setHouse(savedHouse);
+        userHouse.setRole(Role.OWNER);
+        userHouse.setStatus(RequestStatus.APPROVED);
+        othersUserHouseRepository.save(userHouse);
         
         return savedUser;
     }
+    
+    
     
     // Chercher un utilisateur par email (utile pour login)
     public Optional<User> findByEmail(String email) {
