@@ -424,9 +424,9 @@ const Dashboard = () => {
       let url = "";
       
       if (device.type === "LIGHT") {
-        url = `http://localhost:8080/arduino/light/${nextStatus ? "on" : "off"}`;
+        url = `http://localhost:8080/arduino/light/${device.pin}/${nextStatus ? "on" : "off"}`;
       } else if (device.type === "DOOR") {
-        url = `http://localhost:8080/arduino/door/${nextStatus ? "open" : "close"}`;
+        url = `http://localhost:8080/arduino/door/${device.pin}/${nextStatus ? "open" : "close"}`;
       }
       
       const response = await fetch(url, {
@@ -460,7 +460,6 @@ const Dashboard = () => {
       toast.error("Commande non envoyée à l'Arduino");
     }
   };
-  
   const inviteLink = `${window.location.origin}/register?houseId=${user?.houseId || '1'}`;
   const inviteMessage = `Rejoins ma maison connectée sur SmartHome ! Voici ton lien d'accès : ${inviteLink}`;
   
