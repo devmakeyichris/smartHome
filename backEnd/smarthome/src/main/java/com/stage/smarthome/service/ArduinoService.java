@@ -3,7 +3,6 @@ package com.stage.smarthome.service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fazecast.jSerialComm.SerialPort;
@@ -19,18 +18,33 @@ public class ArduinoService {
 
     private SerialPort port;
 
-    @Autowired
-    private RfidCardRepository rfidCardRepository;
+    private final RfidCardRepository rfidCardRepository;
+    private final DoorLogRepository doorLogRepository;
 
-    @Autowired
-    private DoorLogRepository doorLogRepository;
+    private static final String PORT_NAME = "COM4"; // change selon ton Arduino
+    private static final int BAUD_RATE = 9600;
 
-    public ArduinoService() {
-        port = SerialPort.getCommPort("COM4"); // adapte selon ton PC
-        port.setBaudRate(9600);
-        port.openPort();
+    public ArduinoService(RfidCardRepository rfidCardRepository,
+                          DoorLogRepository doorLogRepository) {
+        this.rfidCardRepository = rfidCardRepository;
+        this.doorLogRepository = doorLogRepository;
 
-        // Listener pour lire les messages venant de l’Arduino
+        connectArduino();
+    }
+
+    private void connectArduino() {
+        port = SerialPort.getCommPort(PORT_NAME);
+        port.setBaudRate(BAUD_RATE);
+
+        if (port.openPort()) {
+            System.out.println("Arduino connecté sur " + PORT_NAME);
+            listenToArduino();
+        } else {
+            System.out.println("Arduino non connecté sur " + PORT_NAME);
+        }
+    }
+
+    private void listenToArduino() {
         port.addDataListener(new SerialPortDataListener() {
             @Override
             public int getListeningEvents() {
@@ -39,17 +53,23 @@ public class ArduinoService {
 
             @Override
             public void serialEvent(SerialPortEvent event) {
-                if (event.getEventType() == SerialPort.LISTENING_EVENT_DATA_AVAILABLE) {
-                    byte[] newData = new byte[port.bytesAvailable()];
-                    int numRead = port.readBytes(newData, newData.length);
-                    String message = new String(newData, 0, numRead).trim();
+                if (event.getEventType() != SerialPort.LISTENING_EVENT_DATA_AVAILABLE) {
+                    return;
+                }
 
-                    System.out.println("Message reçu de l’Arduino: " + message);
+                byte[] newData = new byte[port.bytesAvailable()];
+                int numRead = port.readBytes(newData, newData.length);
 
-                    if (message.startsWith("RFID:")) {
-                        String uid = message.substring(5);
-                        handleRfid(uid);
-                    }
+                if (numRead <= 0) {
+                    return;
+                }
+
+                String message = new String(newData, 0, numRead).trim();
+                System.out.println("Message Arduino : " + message);
+
+                if (message.startsWith("RFID:")) {
+                    String uid = message.substring(5).trim();
+                    handleRfid(uid);
                 }
             }
         });
@@ -58,37 +78,52 @@ public class ArduinoService {
     private void handleRfid(String uid) {
         Optional<RfidCard> cardOpt = rfidCardRepository.findByUid(uid);
 
-        if (cardOpt.isPresent()) {
-            // Carte valide → ouvrir la porte
-            sendCommand("DOOR:OPEN");
-            System.out.println("Carte valide, ouverture de la porte");
+        if (cardOpt.isPresent() && cardOpt.get().isActive()) {
+            sendCommand("DOOR_OPEN");
 
-            // Enregistrer un log
             DoorLog log = new DoorLog();
             log.setAction("OPEN");
             log.setTimestamp(LocalDateTime.now());
-            log.setCard(cardOpt.get()); // nécessite un champ card dans DoorLog
+            log.setCard(cardOpt.get());
+
             doorLogRepository.save(log);
 
+            System.out.println("RFID valide : porte principale ouverte");
         } else {
-            // Carte inconnue → refus
-            sendCommand("DOOR:DENIED");
-            System.out.println("Carte inconnue, accès refusé");
+            sendCommand("DOOR_DENIED");
+            System.out.println("RFID refusé : carte inconnue ou bloquée");
         }
     }
 
     public void sendCommand(String command) {
-    if (port.isOpen()) {
-        String cmd = command + "\n"; // retour à la ligne obligatoire
-        byte[] data = cmd.getBytes();
+        if (port == null || !port.isOpen()) {
+            connectArduino();
+        }
+
+        if (port == null || !port.isOpen()) {
+            throw new RuntimeException("Arduino non connecté");
+        }
+
+        String fullCommand = command + "\n";
+        byte[] data = fullCommand.getBytes();
+
         port.writeBytes(data, data.length);
-        System.out.println("Commande envoyée à l’Arduino: " + cmd);
+        System.out.println("Commande envoyée : " + fullCommand);
     }
-}
 
+    public void lightOn() {
+        sendCommand("LIGHT_ON");
+    }
 
-    public void sendDeviceCommand(String type, String action) {
-        String command = type + ":" + action;
-        sendCommand(command);
+    public void lightOff() {
+        sendCommand("LIGHT_OFF");
+    }
+
+    public void doorOpen() {
+        sendCommand("DOOR_OPEN");
+    }
+
+    public void doorClose() {
+        sendCommand("DOOR_CLOSE");
     }
 }
