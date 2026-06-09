@@ -43,7 +43,6 @@ public class RfidCardService {
         
         return rfidCardRepository.save(card);
     }
-    
     public List<RfidCard> getCardsByHouse(Long houseId) {
         return rfidCardRepository.findByHouseId(houseId);
     }

@@ -8,11 +8,9 @@ public class RfidCardResponse {
     private String uid;
     private String name;
     private boolean active;
-
     private Long houseId;
 
     public RfidCardResponse(RfidCard card) {
-
         this.id = card.getId();
         this.uid = card.getUid();
         this.name = card.getName();
@@ -41,25 +39,5 @@ public class RfidCardResponse {
 
     public Long getHouseId() {
         return houseId;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setUid(String uid) {
-        this.uid = uid;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public void setHouseId(Long houseId) {
-        this.houseId = houseId;
     }
 }
