@@ -130,6 +130,8 @@ public class ArduinoService {
     }
     
     private void handleRfid(String uid) {
+        uid = uid.trim().replace(" ", "").toUpperCase();
+        
         Optional<RfidCard> cardOpt = rfidCardRepository.findByUid(uid);
         
         if (cardOpt.isPresent() && cardOpt.get().isActive()) {
@@ -144,8 +146,8 @@ public class ArduinoService {
             
             System.out.println("RFID valide : porte principale ouverte");
         } else {
-            sendCommand("DOOR:" + MAIN_DOOR_PIN + ":CLOSED");
-            System.out.println("RFID refusé : carte inconnue ou bloquée");
+            sendDoorCommand(MAIN_DOOR_PIN, "CLOSED");
+            System.out.println("RFID refusé : carte inconnue ou bloquée : " + uid);
         }
     }
     
