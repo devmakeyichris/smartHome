@@ -6,9 +6,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.stage.smarthome.dto.RfidCardRequest;
 import com.stage.smarthome.dto.RfidCardResponse;
 import com.stage.smarthome.entity.RfidCard;
 import com.stage.smarthome.service.RfidCardService;
+import com.stage.smarthome.dto.RfidCardRequest;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/rfid")
@@ -20,18 +23,15 @@ public class RfidCardController {
         this.rfidCardService = rfidCardService;
     }
     
-    @PostMapping("/register")
-    public ResponseEntity<?> registerCard(@RequestBody RfidCard card) {
-        try {
-            RfidCard savedCard = rfidCardService.registerCard(card);
-            return ResponseEntity.status(HttpStatus.CREATED)
-            .body(new RfidCardResponse(savedCard));
-            
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(e.getMessage());
-        }
+   @PostMapping("/register")
+public ResponseEntity<?> registerCard(@RequestBody RfidCardRequest request) {
+    try {
+        RfidCard savedCard = rfidCardService.registerCard(request);
+        return ResponseEntity.ok(savedCard);
+    } catch (RuntimeException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
     }
+}
     
     @GetMapping("/all")
     public List<RfidCardResponse> getAllCards() {

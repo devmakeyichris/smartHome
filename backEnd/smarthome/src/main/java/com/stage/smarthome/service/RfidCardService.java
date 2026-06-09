@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.stage.smarthome.dto.RfidCardRequest;
 import com.stage.smarthome.entity.House;
 import com.stage.smarthome.entity.RfidCard;
 import com.stage.smarthome.repository.HouseRepository;
@@ -21,19 +22,22 @@ public class RfidCardService {
         this.houseRepository = houseRepository;
     }
     
-    public RfidCard registerCard(RfidCard card) {
-        
-        if (rfidCardRepository.findByUid(card.getUid()).isPresent()) {
-            throw new RuntimeException("Cette carte RFID existe déjà");
-        }
-        
-        if (card.getHouse() == null || card.getHouse().getId() == null) {
+    public RfidCard registerCard(RfidCardRequest request) {
+        if (request.getHouseId() == null) {
             throw new RuntimeException("Maison obligatoire pour enregistrer une carte RFID");
         }
         
-        House house = houseRepository.findById(card.getHouse().getId())
+        House house = houseRepository.findById(request.getHouseId())
         .orElseThrow(() -> new RuntimeException("Maison introuvable"));
         
+        String uid = request.getUid()
+        .trim()
+        .replace(" ", "")
+        .toUpperCase();
+        
+        RfidCard card = new RfidCard();
+        card.setUid(uid);
+        card.setName(request.getName());
         card.setHouse(house);
         card.setActive(true);
         
