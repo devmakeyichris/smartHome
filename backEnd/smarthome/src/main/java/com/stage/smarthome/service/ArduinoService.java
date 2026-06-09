@@ -166,13 +166,21 @@ public class ArduinoService {
     }
     
     public void sendLightCommand(int pin, String action) {
-        sendCommand("LIGHT:" + pin + ":" + action.toUpperCase());
+        String finalAction = action.toUpperCase();
+        sendCommand("LIGHT:" + pin + ":" + finalAction);
+        deviceStates.put("LIGHT:" + pin, finalAction);
     }
     
     public void sendDoorCommand(int pin, String action) {
-        sendCommand("DOOR:" + pin + ":" + action.toUpperCase());
+        String finalAction = action.toUpperCase();
+        
+        if (finalAction.equals("CLOSE")) {
+            finalAction = "CLOSED";
+        }
+        
+        sendCommand("DOOR:" + pin + ":" + finalAction);
+        deviceStates.put("DOOR:" + pin, finalAction);
     }
-    
     public void lightOn(int pin) {
         sendLightCommand(pin, "ON");
     }
@@ -188,8 +196,8 @@ public class ArduinoService {
     public void doorClose(int pin) {
         sendDoorCommand(pin, "CLOSED");
     }
-
+    
     public Map<String, String> getDeviceStates() {
-    return deviceStates;
-}
+        return deviceStates;
+    }
 }
