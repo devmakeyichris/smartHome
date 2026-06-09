@@ -16,8 +16,9 @@ public class RfidCard {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(unique = true)
+    @Column(nullable = false, unique = true)
     private String uid;
+
     
     private String name;
     

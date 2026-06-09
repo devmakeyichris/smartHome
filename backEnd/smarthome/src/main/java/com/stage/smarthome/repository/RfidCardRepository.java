@@ -12,5 +12,7 @@ public interface  RfidCardRepository extends JpaRepository<RfidCard, Long> {
      Optional<RfidCard> findByUid(String uid);
      
      List<RfidCard> findByHouseId(Long houseId);
+     
+     boolean existsByUid(String uid);
 
 }
