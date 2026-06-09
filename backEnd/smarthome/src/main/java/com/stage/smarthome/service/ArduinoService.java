@@ -135,10 +135,10 @@ public class ArduinoService {
         Optional<RfidCard> cardOpt = rfidCardRepository.findByUid(uid);
         
         if (cardOpt.isPresent() && cardOpt.get().isActive()) {
-            sendDoorCommand(MAIN_DOOR_PIN, "OPEN");
+            sendDoorCommand(MAIN_DOOR_PIN, "TOGGLE");
             
             DoorLog log = new DoorLog();
-            log.setAction("OPEN");
+            log.setAction("TOGGLE");
             log.setTimestamp(LocalDateTime.now());
             log.setCard(cardOpt.get());
             
@@ -150,6 +150,10 @@ public class ArduinoService {
             System.out.println("RFID refusé : carte inconnue ou bloquée : " + uid);
         }
     }
+
+    public void doorToggle(int pin) {
+    sendDoorCommand(pin, "TOGGLE");
+}
     
     public void sendCommand(String command) {
         if (port == null || !port.isOpen()) {
@@ -174,15 +178,19 @@ public class ArduinoService {
     }
     
     public void sendDoorCommand(int pin, String action) {
-        String finalAction = action.toUpperCase();
-        
-        if (finalAction.equals("CLOSE")) {
-            finalAction = "CLOSED";
-        }
-        
-        sendCommand("DOOR:" + pin + ":" + finalAction);
+    String finalAction = action.toUpperCase();
+
+    if (finalAction.equals("CLOSE")) {
+        finalAction = "CLOSED";
+    }
+
+    sendCommand("DOOR:" + pin + ":" + finalAction);
+
+    if (!finalAction.equals("TOGGLE")) {
         deviceStates.put("DOOR:" + pin, finalAction);
     }
+}
+
     public void lightOn(int pin) {
         sendLightCommand(pin, "ON");
     }

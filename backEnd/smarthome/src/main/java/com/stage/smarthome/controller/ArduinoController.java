@@ -54,6 +54,11 @@ public class ArduinoController {
             return ResponseEntity.ok(Map.of("message", "Porte fermée", "pin", pin));
         }
         
+        if (action.equalsIgnoreCase("toggle")) {
+            arduinoService.doorToggle(pin);
+            return ResponseEntity.ok(Map.of("message", "Porte inversée", "pin", pin));
+        }
+        
         return ResponseEntity.badRequest().body(Map.of("error", "Action porte invalide"));
     }
     
