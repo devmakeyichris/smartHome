@@ -72,6 +72,41 @@ const Dashboard = () => {
   });
 };
 
+const loadRfidCardsFromBackend = async (userData = user) => {
+  try {
+    const response = await fetch(`${API_URL}/rfid/all`, {
+      method: "GET",
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      throw new Error("Impossible de charger les badges RFID");
+    }
+
+    const data = await response.json();
+
+    const currentHouseId = Number(userData?.houseId);
+
+    const cardsForThisHouse = data
+      .filter(card => Number(card.houseId) === currentHouseId)
+      .map(card => ({
+        id: card.id,
+        name: card.name,
+        badgeId: card.uid,
+        uid: card.uid,
+        houseId: card.houseId,
+        isBlocked: card.active === false
+      }));
+
+    setRfidCards(cardsForThisHouse);
+    sessionStorage.setItem("rfidCards", JSON.stringify(cardsForThisHouse));
+
+  } catch (error) {
+    console.error(error);
+    toast.error("Impossible de charger les badges RFID depuis la base");
+  }
+};
+
   // Chargement des données
   useEffect(() => {
   const loadDashboardData = async () => {
@@ -87,10 +122,9 @@ const Dashboard = () => {
     setUser(userData);
     setIsAuthenticated(true);
 
-    if (savedRfidCards) {
-      setRfidCards(JSON.parse(savedRfidCards));
-    }
+    loadRfidCardsFromBackend(userData);
 
+    
     try {
       const response = await fetch(`${API_URL}/users/email/${userData.email}/house`, {
         method: "GET",
@@ -165,47 +199,131 @@ const Dashboard = () => {
     window.location.href = '/login';
   };
 
-  const toggleBlockCard = (cardId) => {
-    setRfidCards(prev => prev.map(card => {
-      if (card.id === cardId) {
-        const updatedStatus = !card.isBlocked;
-        toast(
-          updatedStatus ? `🚫 Badge de ${card.name} bloqué !` : `✅ Badge de ${card.name} débloqué !`,
-          { icon: updatedStatus ? '🔒' : '🔓' }
-        );
-        addLog(updatedStatus ? 'Badge Bloqué' : 'Badge Débloqué', card.name, 'Système RFID');
-        return { ...card, isBlocked: updatedStatus };
+  const toggleBlockCard = async (cardId) => {
+  const card = rfidCards.find(c => c.id === cardId);
+
+  if (!card) {
+    toast.error("Badge introuvable");
+    return;
+  }
+
+  const url = card.isBlocked
+    ? `${API_URL}/rfid/${cardId}/unblock`
+    : `${API_URL}/rfid/${cardId}/block`;
+
+  try {
+    const response = await fetch(url, {
+      method: "PUT",
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Erreur lors du changement d'état du badge");
+    }
+
+    const updatedCardFromBackend = await response.json();
+
+    const updatedCards = rfidCards.map(c => {
+      if (c.id === cardId) {
+        return {
+          ...c,
+          isBlocked: updatedCardFromBackend.active === false
+        };
       }
-      return card;
-    }));
-  };
+      return c;
+    });
 
-  const handleAddRfidCard = (e) => {
-    e.preventDefault();
-    if (!newCardName.trim() || !newCardBadgeId.trim()) {
-      toast.error("Veuillez remplir tous les champs !");
-      return;
+    setRfidCards(updatedCards);
+    sessionStorage.setItem("rfidCards", JSON.stringify(updatedCards));
+
+    const isNowBlocked = updatedCardFromBackend.active === false;
+
+    toast(
+      isNowBlocked
+        ? `Badge de ${card.name} bloqué !`
+        : `Badge de ${card.name} débloqué !`
+    );
+
+    addLog(
+      isNowBlocked ? "Badge Bloqué" : "Badge Débloqué",
+      card.name,
+      "Système RFID"
+    );
+
+  } catch (error) {
+    console.error(error);
+    toast.error("Modification du badge non enregistrée en base");
+  }
+};
+
+  const handleAddRfidCard = async (e) => {
+  e.preventDefault();
+
+  if (!newCardName.trim() || !newCardBadgeId.trim()) {
+    toast.error("Veuillez remplir tous les champs !");
+    return;
+  }
+
+  const uid = newCardBadgeId.trim().replace(/\s/g, "").toUpperCase();
+  const houseId = Number(user?.houseId);
+
+  if (!houseId) {
+    toast.error("Impossible d'ajouter le badge : maison introuvable");
+    return;
+  }
+
+  if (rfidCards.some(c => (c.uid || c.badgeId).toUpperCase() === uid)) {
+    toast.error("Cet ID de badge existe déjà !");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/rfid/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        uid: uid,
+        name: newCardName.trim(),
+        houseId: houseId
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Erreur lors de l'enregistrement du badge");
     }
 
-    if (rfidCards.some(c => c.badgeId.toLowerCase() === newCardBadgeId.trim().toLowerCase())) {
-      toast.error("Cet ID de badge existe déjà !");
-      return;
-    }
+    const savedCard = await response.json();
 
     const newCard = {
-      id: Date.now(),
-      name: newCardName.trim(),
-      badgeId: newCardBadgeId.trim().toUpperCase(),
-      isBlocked: false
+      id: savedCard.id,
+      name: savedCard.name,
+      badgeId: savedCard.uid,
+      uid: savedCard.uid,
+      houseId: savedCard.houseId,
+      isBlocked: savedCard.active === false
     };
 
-    setRfidCards(prev => [...prev, newCard]);
-    addLog('Badge Enregistré', newCard.name, 'Système RFID');
-    toast.success(`Badge ajouté pour ${newCard.name} !`);
-    setNewCardName('');
-    setNewCardBadgeId('');
-  };
+    const updatedCards = [...rfidCards, newCard];
 
+    setRfidCards(updatedCards);
+    sessionStorage.setItem("rfidCards", JSON.stringify(updatedCards));
+
+    addLog("Badge Enregistré", newCard.name, "Système RFID");
+    toast.success(`Badge ajouté pour ${newCard.name} !`);
+
+    setNewCardName("");
+    setNewCardBadgeId("");
+
+  } catch (error) {
+    console.error(error);
+    toast.error("Badge non enregistré dans la base de données");
+  }
+};
   const triggerRfidScanSimulation = () => {
     if (!mainDoorRoom) {
       toast.error("Aucune porte principale configurée !");
