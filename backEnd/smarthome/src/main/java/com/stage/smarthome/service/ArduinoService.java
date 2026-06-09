@@ -28,6 +28,7 @@ public class ArduinoService {
     
     private static final int MAIN_DOOR_PIN = 6;
     private final Map<String, String> deviceStates = new ConcurrentHashMap<>();
+    private final StringBuilder serialBuffer = new StringBuilder();
     
     public ArduinoService(RfidCardRepository rfidCardRepository,
     DoorLogRepository doorLogRepository) {
@@ -69,46 +70,55 @@ public class ArduinoService {
                     return;
                 }
                 
-                String rawMessage = new String(newData, 0, numRead).trim();
+                String chunk = new String(newData, 0, numRead);
                 
-                if (rawMessage.isEmpty()) {
-                    return;
-                }
-                
-                String[] messages = rawMessage.split("\\r?\\n");
-                
-                for (String message : messages) {
-                    message = message.trim();
+                synchronized (serialBuffer) {
+                    serialBuffer.append(chunk);
                     
-                    if (message.isEmpty()) {
-                        continue;
-                    }
+                    int newlineIndex;
                     
-                    System.out.println("Message Arduino : " + message);
-                    
-                    if (message.startsWith("RFID:")) {
-                        String uid = message.substring(5).trim();
-                        handleRfid(uid);
-                    }
-                    
-                    else if (message.startsWith("LIGHT:")) {
-                        handleDeviceState(message);
-                    }
-                    
-                    else if (message.startsWith("DOOR:")) {
-                        handleDeviceState(message);
-                    }
-                    
-                    else if (message.startsWith("MAIN_DOOR:")) {
-                        if (message.endsWith(":OPEN")) {
-                            deviceStates.put("DOOR:6", "OPEN");
-                        } else if (message.endsWith(":CLOSED")) {
-                            deviceStates.put("DOOR:6", "CLOSED");
+                    while ((newlineIndex = serialBuffer.indexOf("\n")) >= 0) {
+                        String line = serialBuffer.substring(0, newlineIndex)
+                        .replace("\r", "")
+                        .trim();
+                        
+                        serialBuffer.delete(0, newlineIndex + 1);
+                        
+                        if (!line.isEmpty()) {
+                            processArduinoMessage(line);
                         }
                     }
                 }
             }
         });
+    }
+    
+    
+    private void processArduinoMessage(String message) {
+        System.out.println("Message Arduino : " + message);
+        
+        if (message.startsWith("RFID:")) {
+            String uid = message.substring(5).trim();
+            handleRfid(uid);
+        }
+        
+        else if (message.startsWith("LIGHT:")) {
+            handleDeviceState(message);
+        }
+        
+        else if (message.startsWith("DOOR:")) {
+            handleDeviceState(message);
+        }
+        
+        else if (message.startsWith("MAIN_DOOR:")) {
+            if (message.endsWith(":OPEN")) {
+                deviceStates.put("DOOR:6", "OPEN");
+                System.out.println("État mis à jour : DOOR:6 = OPEN");
+            } else if (message.endsWith(":CLOSED")) {
+                deviceStates.put("DOOR:6", "CLOSED");
+                System.out.println("État mis à jour : DOOR:6 = CLOSED");
+            }
+        }
     }
     
     private void handleDeviceState(String message) {
@@ -150,10 +160,10 @@ public class ArduinoService {
             System.out.println("RFID refusé : carte inconnue ou bloquée : " + uid);
         }
     }
-
+    
     public void doorToggle(int pin) {
-    sendDoorCommand(pin, "TOGGLE");
-}
+        sendDoorCommand(pin, "TOGGLE");
+    }
     
     public void sendCommand(String command) {
         if (port == null || !port.isOpen()) {
@@ -167,8 +177,14 @@ public class ArduinoService {
         String fullCommand = command + "\n";
         byte[] data = fullCommand.getBytes();
         
-        port.writeBytes(data, data.length);
-        System.out.println("Commande envoyée à l'Arduino : " + fullCommand);
+        int bytesWritten = port.writeBytes(data, data.length);
+        
+        System.out.println("Commande envoyée à l'Arduino : " + command);
+        System.out.println("Octets envoyés : " + bytesWritten + "/" + data.length);
+        
+        if (bytesWritten != data.length) {
+            throw new RuntimeException("Commande non envoyée complètement à l'Arduino");
+        }
     }
     
     public void sendLightCommand(int pin, String action) {
@@ -178,19 +194,19 @@ public class ArduinoService {
     }
     
     public void sendDoorCommand(int pin, String action) {
-    String finalAction = action.toUpperCase();
-
-    if (finalAction.equals("CLOSE")) {
-        finalAction = "CLOSED";
+        String finalAction = action.toUpperCase();
+        
+        if (finalAction.equals("CLOSE")) {
+            finalAction = "CLOSED";
+        }
+        
+        sendCommand("DOOR:" + pin + ":" + finalAction);
+        
+        if (!finalAction.equals("TOGGLE")) {
+            deviceStates.put("DOOR:" + pin, finalAction);
+        }
     }
-
-    sendCommand("DOOR:" + pin + ":" + finalAction);
-
-    if (!finalAction.equals("TOGGLE")) {
-        deviceStates.put("DOOR:" + pin, finalAction);
-    }
-}
-
+    
     public void lightOn(int pin) {
         sendLightCommand(pin, "ON");
     }
