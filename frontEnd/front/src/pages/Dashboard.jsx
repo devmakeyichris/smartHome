@@ -137,6 +137,63 @@ const Dashboard = () => {
       sessionStorage.setItem('rfidCards', JSON.stringify(rfidCards));
     }
   }, [rfidCards]);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch("http://localhost:8080/arduino/states");
+        
+        if (!response.ok) return;
+        
+        const states = await response.json();
+        
+        setRooms(prevRooms => {
+          let changed = false;
+          
+          const updatedRooms = prevRooms.map(room => ({
+            ...room,
+            devices: room.devices.map(device => {
+              const key = `${device.type}:${device.pin}`;
+              const arduinoState = states[key];
+              
+              if (!arduinoState) {
+                return device;
+              }
+              
+              const newStatus =
+              arduinoState === "ON" ||
+              arduinoState === "OPEN";
+              
+              if (device.status === newStatus && device.state === arduinoState) {
+                return device;
+              }
+              
+              changed = true;
+              
+              return {
+                ...device,
+                status: newStatus,
+                state: arduinoState
+              };
+            })
+          }));
+          
+          if (changed) {
+            sessionStorage.setItem("homeConfig", JSON.stringify(updatedRooms));
+            return updatedRooms;
+          }
+          
+          return prevRooms;
+        });
+        
+      } catch (error) {
+        console.warn("Impossible de synchroniser les états Arduino :", error);
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
   
   const saveConfigToStorage = (updatedRooms) => {
     setRooms(updatedRooms);
