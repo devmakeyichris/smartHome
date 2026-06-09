@@ -23,7 +23,7 @@ public class RfidCard {
     
     private boolean active = true; // true = autorisée, false = bloquée
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "house_id")
     private House house;
     
@@ -59,11 +59,11 @@ public class RfidCard {
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public House getHouse() {
         return house;
     }
-
+    
     public void setHouse(House house) {
         this.house = house;
     }
