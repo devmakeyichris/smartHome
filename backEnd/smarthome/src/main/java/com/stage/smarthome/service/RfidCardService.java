@@ -41,8 +41,8 @@ public class RfidCardService {
         card.setHouse(house);
         card.setActive(true);
         
-        if (rfidCardRepository.existsByUid(uid)) {
-            throw new RuntimeException("Cette carte RFID est déjà enregistrée.");
+        if (rfidCardRepository.existsByUidAndHouse_Id(uid, request.getHouseId())) {
+            throw new RuntimeException("Cette carte RFID est déjà enregistrée pour cette maison.");
         }
         return rfidCardRepository.save(card);
     }
