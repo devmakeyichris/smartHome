@@ -68,6 +68,10 @@ public class OthersUserHouseService {
         return othersUserHouseRepository.save(othersUserHouse);
     }
 
+    public List<OthersUserHouse> getPendingRequestsByHouse(Long houseId) {
+    return othersUserHouseRepository.findByHouseIdAndStatus(houseId, RequestStatus.PENDING);
+}
+
     public String generateInvitationLink(House house) {
         return "http://localhost:5173/register?houseId=" + house.getId();
     }
