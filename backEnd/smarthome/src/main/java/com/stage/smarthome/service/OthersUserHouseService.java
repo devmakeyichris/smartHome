@@ -78,8 +78,7 @@ public class OthersUserHouseService {
         return "http://localhost:5173/register?houseId=" + house.getId();
     }
     
-    
-    
+
     public OthersUserHouse approveJoinRequest(Long othersUserHouseId, boolean approved) {
         
         OthersUserHouse othersUserHouse = othersUserHouseRepository.findById(othersUserHouseId)
