@@ -37,6 +37,15 @@ public class DeviceService {
         return deviceRepository.save(device);
     }
 
+    public Device updateState(Long id, String state) {
+    Device device = deviceRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Équipement introuvable"));
+
+    device.setState(DeviceState.valueOf(state.toUpperCase()));
+
+    return deviceRepository.save(device);
+}
+
     // Ajouter un nouveau device
     public Device addDevice(Device device) {
         return deviceRepository.save(device);
