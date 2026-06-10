@@ -15,4 +15,6 @@ public interface  RfidCardRepository extends JpaRepository<RfidCard, Long> {
      
      boolean existsByUid(String uid);
 
+     boolean existsByUidAndHouse_Id(String uid, Long houseId);
+
 }
