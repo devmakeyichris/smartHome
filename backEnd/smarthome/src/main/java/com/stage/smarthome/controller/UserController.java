@@ -12,12 +12,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.stage.smarthome.dto.HouseResponse;
+import com.stage.smarthome.dto.UserHouseAccessResponse;
 import com.stage.smarthome.dto.UserRegistrationWrapper;
 import com.stage.smarthome.dto.UserResponse;
 import com.stage.smarthome.entity.House;
+import com.stage.smarthome.entity.OthersUserHouse;
 import com.stage.smarthome.entity.User;
+import com.stage.smarthome.repository.OthersUserHouseRepository;
 import com.stage.smarthome.runtime.EmailAlreadyUsedException;
 import com.stage.smarthome.service.UserService;
+
 
 import jakarta.servlet.http.HttpSession;
 
@@ -26,9 +30,11 @@ import jakarta.servlet.http.HttpSession;
 public class UserController {
     
     private final UserService userService;
+    private final OthersUserHouseRepository othersUserHouseRepository;
     
-    public UserController(UserService userService) {
+    public UserController(UserService userService,OthersUserHouseRepository othersUserHouseRepository) {
         this.userService = userService;
+        this.othersUserHouseRepository = othersUserHouseRepository;
     }
     
     @PostMapping("/register")
@@ -69,22 +75,20 @@ public class UserController {
     
     
     @GetMapping("/email/{email}/house")
-    public ResponseEntity<?> getHouseByEmail(@PathVariable String email) {
-        try {
-            House house = userService.getHouseByEmail(email);
-            
-            HouseResponse response = new HouseResponse(house);
-            
-            return ResponseEntity.ok(response);
-            
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(e.getMessage());
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body("Error: " + e.getMessage());
-        }
+    public ResponseEntity<UserHouseAccessResponse> getUserHouseByEmail(@PathVariable String email) {
+        
+        OthersUserHouse relation = othersUserHouseRepository.findFirstByUser_EmailOrderByIdDesc(email)
+        .orElseThrow(() -> new RuntimeException("Aucune maison associée à cet utilisateur"));
+        
+        HouseResponse houseResponse = new HouseResponse(relation.getHouse());
+        
+        UserHouseAccessResponse response = new UserHouseAccessResponse(
+        houseResponse,
+        relation.getRole().name(),
+        relation.getStatus().name()
+        );
+        
+        return ResponseEntity.ok(response);
     }
     
     

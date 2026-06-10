@@ -3,6 +3,7 @@ package com.stage.smarthome.repository;
 
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -16,5 +17,7 @@ public interface OthersUserHouseRepository extends JpaRepository<OthersUserHouse
     List<OthersUserHouse> findByUser(User user);
     
     List<OthersUserHouse> findByHouse_IdAndStatus(Long houseId, RequestStatus status);
+
+    Optional<OthersUserHouse> findFirstByUser_EmailOrderByIdDesc(String email);
     
 }

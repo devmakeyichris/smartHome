@@ -51,8 +51,9 @@ public class RfidCardService {
     }
     
     public Optional<RfidCard> findByUid(String uid) {
-        return rfidCardRepository.findByUid(uid);
-    }
+    uid = uid.trim().replace(" ", "").toUpperCase();
+    return rfidCardRepository.findByUid(uid);
+}
     
     public List<RfidCard> getAllCards() {
         return rfidCardRepository.findAll();
