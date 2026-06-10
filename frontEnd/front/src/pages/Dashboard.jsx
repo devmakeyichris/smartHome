@@ -47,7 +47,6 @@ const Dashboard = () => {
   const [newRoomName, setNewRoomName] = useState('');
   const [newLightPin, setNewLightPin] = useState('');
   const [newDoorPin, setNewDoorPin] = useState('');
-  const [isMainDoorForNewRoom, setIsMainDoorForNewRoom] = useState(false);
 
   const [addingDeviceRoomIdx, setAddingDeviceRoomIdx] = useState(null);
   const [newDeviceType, setNewDeviceType] = useState('LIGHT');
@@ -100,6 +99,7 @@ const Dashboard = () => {
     sessionStorage.setItem('homeConfig', JSON.stringify(updatedRooms));
 
     const mainDoor = updatedRooms.find(room => room.hasMainDoor === true);
+
     if (mainDoor) {
       setMainDoorRoom(mainDoor);
       setInitialMainDoorName(mainDoor.roomName);
@@ -118,14 +118,15 @@ const Dashboard = () => {
       minute: '2-digit'
     });
 
-    const newEntry = {
-      action,
-      device: deviceName,
-      room: roomName,
-      time
-    };
-
-    setLogs(prev => [newEntry, ...prev]);
+    setLogs(prev => [
+      {
+        action,
+        device: deviceName,
+        room: roomName,
+        time
+      },
+      ...prev
+    ]);
   };
 
   const loadRfidCardsFromBackend = async (userData = user) => {
@@ -457,8 +458,8 @@ const Dashboard = () => {
 
       toast(
         isNowBlocked
-          ? `Badge de ${card.name} bloqué !`
-          : `Badge de ${card.name} débloqué !`
+          ? `Badge de ${card.name} bloqué`
+          : `Badge de ${card.name} débloqué`
       );
 
       addLog(
@@ -541,10 +542,8 @@ const Dashboard = () => {
 
   const handleAddRoom = (e) => {
     e.preventDefault();
-
     toast.error("L'ajout de pièce doit être relié au backend avant utilisation.");
   };
-
 
   const startEditRoom = (idx, room) => {
     setEditingRoomIdx(idx);
@@ -552,7 +551,6 @@ const Dashboard = () => {
     setEditLightPin(room.lightPin?.toString() || '');
     setEditDoorPin(room.doorPin?.toString() || '');
   };
-
 
   const saveEditRoom = (idx) => {
     const trimmed = editRoomName.trim();
@@ -774,7 +772,6 @@ const Dashboard = () => {
     setShowInviteOptions(false);
   };
 
-
   const handleShareViaEmail = () => {
     if (!inviteLink) {
       toast.error("Génère d'abord un lien d'invitation");
@@ -789,7 +786,6 @@ const Dashboard = () => {
     toast.success('Ouverture de votre client email...');
     setShowInviteOptions(false);
   };
-
 
   const handleCopyInviteLink = () => {
     if (!inviteLink) {
@@ -852,7 +848,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
 
   return (
     <div className="dashboard-container">
@@ -1235,33 +1230,20 @@ const Dashboard = () => {
             color: 'white'
           }}
         >
-          <div
+          <h2
             style={{
+              margin: 0,
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '15px'
+              gap: '10px'
             }}
           >
-            <div>
-              <h2
-                style={{
-                  margin: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}
-              >
-                <DoorOpen size={24} /> Porte principale - {mainDoorRoom.roomName}
-              </h2>
+            <DoorOpen size={24} /> Porte principale - {mainDoorRoom.roomName}
+          </h2>
 
-              <p style={{ margin: '5px 0 0', opacity: 0.9 }}>
-                PIN: {mainDoorRoom.doorPin} • Statut:{' '}
-                {mainDoorStatus ? 'OUVERTE' : 'FERMÉE'}
-              </p>
-            </div>
-          </div>
+          <p style={{ margin: '5px 0 0', opacity: 0.9 }}>
+            PIN: {mainDoorRoom.doorPin} • Statut: {mainDoorStatus ? 'OUVERTE' : 'FERMÉE'}
+          </p>
         </div>
       )}
 
