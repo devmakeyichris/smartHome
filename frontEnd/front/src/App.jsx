@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import Invitation from './pages/Invitation';
 
 // --- PAGE D'ACCUEIL ---
 const PageAccueil = () => {
@@ -92,6 +93,7 @@ function App() {
             } />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/invitation/:token" element={<Invitation />} />
           </Routes>
         </main>
       </div>
