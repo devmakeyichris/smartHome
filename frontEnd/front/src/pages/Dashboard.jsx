@@ -22,8 +22,6 @@ import toast, { Toaster } from 'react-hot-toast';
 
 const API_URL = 'http://localhost:8080';
 
-const API_URL = 'http://localhost:8080';
-
 const Dashboard = () => {
   const [rooms, setRooms] = useState([]);
   const [user, setUser] = useState(null);
